@@ -1,0 +1,26 @@
+{
+  "name": "schoolbus_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vantayden/SchoolBus_Server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vantayden/SchoolBus_Server/issues"
+  },
+  "homepage": "https://github.com/vantayden/SchoolBus_Server#readme",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "express": "^4.17.1",
+    "localenv": "^0.2.2",
+    "mongodb": "^2.2.36",
+    "simple-oauth2-server": "^2.1.1"
+  }
+}
