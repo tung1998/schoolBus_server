@@ -1,4 +1,5 @@
 const { ObjectID } = require('mongodb')
+const crypto = require('crypto')
 
 /**
  * Creats user.
@@ -18,6 +19,8 @@ const { ObjectID } = require('mongodb')
  * @returns {Object}
  */
 function createUser (db, username, password, salt, image, name, phone, email, userType, isBlocked, bolockedBy, blockedReason, liftTime) {
+  if (salt === undefined) salt = randomSalt()
+  password = hashPassword(password, salt)
   return db.collection(process.env.USER_COLLECTION)
     .insertOne({
       username,
@@ -116,6 +119,59 @@ function deleteUser (db, userID) {
     )
 }
 
+/**
+ * Hash password.
+ * @param {string} password
+ * @param {string} salt
+ * @returns {string}
+ */
+function hashPassword (password, salt) {
+  return crypto.createHmac('sha256', salt).update(password).digest('hex')
+}
+
+/**
+ * Random salt.
+ * @param {number} len
+ * @returns {string}
+ */
+function randomSalt (len = 5) {
+  let text = ''
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+
+  for (let i = 0; i < len; i += 1) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length))
+  }
+
+  return text
+}
+
+/**
+ * Login by username.
+ * @param {Object} db
+ * @param {string} username
+ * @param {string} password
+ * @param {string} scope
+ * @returns {Object}
+ */
+function loginByUsername (db, username, password, scope) {
+  return new Promise((resolve, reject) => {
+    let query = { isDeleted: false, username }
+    if (scope !== undefined) query.userType = Number(scope)
+    db.collection(process.env.USER_COLLECTION).findOne(query).then(user => {
+      if (user === null) {
+        reject()
+      } else {
+        const checkPassword = hashPassword(password, user.salt)
+        if (checkPassword === user.password) {
+          resolve(user) // OK
+        } else {
+          reject() // sai pass
+        }
+      }
+    }).catch(reject)
+  })
+}
+
 module.exports = {
   createUser,
   countUsers,
@@ -124,4 +180,5 @@ module.exports = {
   getUsersByIDs,
   updateUser,
   deleteUser,
+  loginByUsername,
 }
