@@ -88,6 +88,24 @@ function getStudentTripsByIDs (db, studentTripIDs, extra = 'trip,student') {
 }
 
 /**
+ * Get studentTrips by trip.
+ * @param {Object} db
+ * @param {Array} tripID
+ * @param {string} [extra='trip,student']
+ * @returns {Object}
+ */
+function getStudentTripsByTrip (db, tripID, extra = 'trip,student') {
+  return db.collection(process.env.STUDENT_TRIP_COLLECTION)
+    .find({ isDeleted: false, tripID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -194,6 +212,7 @@ module.exports = {
   getStudentTrips,
   getStudentTripByID,
   getStudentTripsByIDs,
+  getStudentTripsByTrip,
   updateStudentTrip,
   deleteStudentTrip,
 }
