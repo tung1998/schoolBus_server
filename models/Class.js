@@ -103,7 +103,6 @@ function getClassesBySchool (db, schoolID, extra = 'school,teacher') {
       if (!extra) return v
       return addExtra(db, v, extra)
     })
-    .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
 }
 
 /**
