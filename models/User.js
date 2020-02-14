@@ -6,35 +6,31 @@ const crypto = require('crypto')
  * @param {Object} db
  * @param {string} username
  * @param {string} password
- * @param {string} salt
  * @param {string} image
  * @param {string} name
  * @param {string} phone
  * @param {string} email
  * @param {number} userType
- * @param {boolean} isBlocked
- * @param {string} bolockedBy
- * @param {string} blockedReason
- * @param {number} liftTime
  * @returns {Object}
  */
-function createUser (db, username, password, salt, image, name, phone, email, userType, isBlocked, bolockedBy, blockedReason, liftTime) {
-  if (salt === undefined) salt = randomSalt()
-  password = hashPassword(password, salt)
+function createUser (db, username, password, image, name, phone, email, userType) {
+  let salt = randomSalt()
   return db.collection(process.env.USER_COLLECTION)
     .insertOne({
       username,
-      password,
+      password: hashPassword(password, salt),
       salt,
       image,
       name,
       phone,
       email,
       userType,
-      isBlocked,
-      bolockedBy,
-      blockedReason,
-      liftTime,
+      isBlocked: false,
+      blockedBy: null,
+      blockedReason: null,
+      liftTime: null,
+      isVerify: false,
+      resetCode: null,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -172,6 +168,52 @@ function loginByUsername (db, username, password, scope) {
   })
 }
 
+/**
+ * Block user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} blockedBy
+ * @param {string} blockedReason
+ * @returns {Object}
+ */
+function blockUser (db, userID, blockedBy, blockedReason) {
+  let p = db.collection(process.env.USER_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(userID) },
+      { $set: { isBlocked: true, blockedBy, blockedReason, liftTime: Date.now() } },
+    )
+  p.then(({ matchedCount }) => {
+    if (matchedCount === 1) {
+      deleteTokensByUser(db, userID)
+    }
+  })
+  return p
+}
+
+/**
+ * Unblock user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function unblockUser (db, userID) {
+  return db.collection(process.env.USER_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(userID) },
+      { $set: { isBlocked: false, blockedBy: null, blockedReason: null, liftTime: null } },
+    )
+}
+
+/**
+ * Delete tokens by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {undefined}
+ */
+function deleteTokensByUser (db, userID) {
+  db.collection(process.env.OAUTH2_TOKEN_COLLECTION).deleteMany({ userID })
+}
+
 module.exports = {
   createUser,
   countUsers,
@@ -181,4 +223,6 @@ module.exports = {
   updateUser,
   deleteUser,
   loginByUsername,
+  blockUser,
+  unblockUser,
 }

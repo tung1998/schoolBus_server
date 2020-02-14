@@ -5,9 +5,9 @@ const UserModel = require('./../models/User')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, salt, image, name, phone, email, userType, isBlocked, bolockedBy, blockedReason, liftTime } = req.body
+  let { username, password, image, name, phone, email, userType } = req.body
   let { db } = req.app.locals
-  UserModel.createUser(db, username, password, salt, image, name, phone, email, userType, isBlocked, bolockedBy, blockedReason, liftTime)
+  UserModel.createUser(db, username, password, image, name, phone, email, userType)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -75,20 +75,12 @@ router.get('/:userID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:userID([0-9a-fA-F]{24})', (req, res, next) => {
   let { userID } = req.params
-  let { username, password, salt, image, name, phone, email, userType, isBlocked, bolockedBy, blockedReason, liftTime } = req.body
+  let { image, name, phone, email } = req.body
   let obj = {}
-  if (username !== undefined) obj.username = username
-  if (password !== undefined) obj.password = password
-  if (salt !== undefined) obj.salt = salt
   if (image !== undefined) obj.image = image
   if (name !== undefined) obj.name = name
   if (phone !== undefined) obj.phone = phone
   if (email !== undefined) obj.email = email
-  if (userType !== undefined) obj.userType = userType
-  if (isBlocked !== undefined) obj.isBlocked = isBlocked
-  if (bolockedBy !== undefined) obj.bolockedBy = bolockedBy
-  if (blockedReason !== undefined) obj.blockedReason = blockedReason
-  if (liftTime !== undefined) obj.liftTime = liftTime
   let { db } = req.app.locals
   UserModel.updateUser(db, userID, obj)
     .then(({ matchedCount }) => {
@@ -155,6 +147,58 @@ router.get('/:userID([0-9a-fA-F]{24})/Log', (req, res, next) => {
   page = Number(page)
   LogModel.getLogsByObject(db, 'user', userID, sortBy, sortType, limit, page, extra)
     .then(v => res.send(v))
+    .catch(next)
+})
+
+router.put('/:userID([0-9a-fA-F]{24})/block', (req, res, next) => {
+  let { userID } = req.params
+  let { blockedReason } = req.body
+  let blockedBy = req.token ? req.token.userID : null
+  let { db } = req.app.locals
+  UserModel.blockUser(db, userID, blockedBy, blockedReason)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send({ error: false, message: 'Block success' })
+        return LogModel.createLog(
+          db,
+          blockedBy,
+          req.headers['user-agent'],
+          req.ip,
+          `Block user : _id = ${userID}`,
+          Date.now(),
+          1,
+          req.body,
+          'user',
+          userID,
+        )
+      }
+    })
+    .catch(next)
+})
+
+router.put('/:userID([0-9a-fA-F]{24})/unblock', (req, res, next) => {
+  let { userID } = req.params
+  let { db } = req.app.locals
+  UserModel.unblockUser(db, userID)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send({ error: false, message: 'UnBlock success' })
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Unblock user : _id = ${userID}`,
+          Date.now(),
+          1,
+          null,
+          'user',
+          userID,
+        )
+      }
+    })
     .catch(next)
 })
 
