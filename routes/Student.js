@@ -78,9 +78,8 @@ router.get('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { studentID } = req.params
-  let { userID, address, IDStudent, name, classID, status } = req.body
+  let { address, IDStudent, name, classID, status } = req.body
   let obj = {}
-  if (userID !== undefined) obj.userID = userID
   if (address !== undefined) obj.address = address
   if (IDStudent !== undefined) obj.IDStudent = IDStudent
   if (name !== undefined) obj.name = name

@@ -75,6 +75,23 @@ function getStudentByID (db, studentID, extra = 'user,class') {
 }
 
 /**
+ * Get student by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} [extra='user,class']
+ * @returns {Object}
+ */
+function getStudentByUser (db, userID, extra = 'user,class') {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .findOne({ isDeleted: false, userID })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Get students by ids.
  * @param {Object} db
  * @param {Array} studentIDs
@@ -91,6 +108,24 @@ function getStudentsByIDs (db, studentIDs, extra = 'user,class') {
       return addExtra(db, v, extra)
     })
     .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
+}
+
+/**
+ * Get students by class.
+ * @param {Object} db
+ * @param {Array} classID
+ * @param {string} [extra='user,class']
+ * @returns {Object}
+ */
+function getStudentsByClass (db, classID, extra = 'user,class') {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, classID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
 }
 
 /**
@@ -194,14 +229,31 @@ function deleteStudent (db, studentID) {
     )
 }
 
+/**
+ * Delete student by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function deleteStudentByUser (db, userID) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .updateOne(
+      { isDeleted: false, userID },
+      { $set: { isDeleted: true } },
+    )
+}
+
 module.exports = {
   createStudent,
   countStudents,
   getStudents,
   getStudentByID,
+  getStudentByUser,
   getStudentsByIDs,
+  getStudentsByClass,
   updateStudent,
   deleteStudent,
+  deleteStudentByUser,
 }
 
 const { getUsersByIDs, getUserByID } = require('./User')
