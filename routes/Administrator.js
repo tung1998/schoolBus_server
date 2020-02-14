@@ -78,9 +78,8 @@ router.get('/:administratorID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:administratorID([0-9a-fA-F]{24})', (req, res, next) => {
   let { administratorID } = req.params
-  let { userID, adminType, permission } = req.body
+  let { adminType, permission } = req.body
   let obj = {}
-  if (userID !== undefined) obj.userID = userID
   if (adminType !== undefined) obj.adminType = adminType
   if (permission !== undefined) obj.permission = permission
   let { db } = req.app.locals

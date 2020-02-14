@@ -69,6 +69,23 @@ function getAdministratorByID (db, administratorID, extra = 'user') {
 }
 
 /**
+ * Get administrator by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} [extra='user']
+ * @returns {Object}
+ */
+function getAdministratorByUser (db, userID, extra = 'user') {
+  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
+    .findOne({ isDeleted: false, userID })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Get administrators by ids.
  * @param {Object} db
  * @param {Array} administratorIDs
@@ -166,14 +183,30 @@ function deleteAdministrator (db, administratorID) {
     )
 }
 
+/**
+ * Delete administrator by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function deleteAdministratorByUser (db, userID) {
+  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
+    .updateOne(
+      { isDeleted: false, userID },
+      { $set: { isDeleted: true } },
+    )
+}
+
 module.exports = {
   createAdministrator,
   countAdministrators,
   getAdministrators,
   getAdministratorByID,
+  getAdministratorByUser,
   getAdministratorsByIDs,
   updateAdministrator,
   deleteAdministrator,
+  deleteAdministratorByUser,
 }
 
 const { getUsersByIDs, getUserByID } = require('./User')
