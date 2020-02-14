@@ -202,4 +202,53 @@ router.put('/:userID([0-9a-fA-F]{24})/unblock', (req, res, next) => {
     .catch(next)
 })
 
+router.put('/password', (req, res, next) => {
+  let { userID } = req.token
+  let { password } = req.body
+  let { db } = req.app.locals
+  UserModel.updateUserPassword(db, userID, password)
+    .then(() => {
+      res.send()
+      return LogModel.createLog(
+        db,
+        userID,
+        req.headers['user-agent'],
+        req.ip,
+        `Update user password : _id = ${userID}`,
+        Date.now(),
+        1,
+        req.body,
+        'user',
+        userID,
+      )
+    })
+    .catch(next)
+})
+
+router.put('/:userID([0-9a-fA-F]{24})/password', (req, res, next) => {
+  let { userID } = req.params
+  let { password } = req.body
+  let { db } = req.app.locals
+  UserModel.updateUserPassword(db, userID, password)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update user password : _id = ${userID}`,
+          Date.now(),
+          1,
+          req.body,
+          'user',
+          userID,
+        )
+      }
+    })
+    .catch(next)
+})
+
 module.exports = router

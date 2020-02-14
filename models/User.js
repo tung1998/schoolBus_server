@@ -180,7 +180,7 @@ function blockUser (db, userID, blockedBy, blockedReason) {
   let p = db.collection(process.env.USER_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(userID) },
-      { $set: { isBlocked: true, blockedBy, blockedReason, liftTime: Date.now() } },
+      { $set: { updatedTime: Date.now(), isBlocked: true, blockedBy, blockedReason, liftTime: Date.now() } },
     )
   p.then(({ matchedCount }) => {
     if (matchedCount === 1) {
@@ -200,7 +200,7 @@ function unblockUser (db, userID) {
   return db.collection(process.env.USER_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(userID) },
-      { $set: { isBlocked: false, blockedBy: null, blockedReason: null, liftTime: null } },
+      { $set: { updatedTime: Date.now(), isBlocked: false, blockedBy: null, blockedReason: null, liftTime: null } },
     )
 }
 
@@ -214,6 +214,27 @@ function deleteTokensByUser (db, userID) {
   db.collection(process.env.OAUTH2_TOKEN_COLLECTION).deleteMany({ userID })
 }
 
+/**
+ * Update user password
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} password
+ * @returns {Object}
+ */
+function updateUserPassword (db, userID, password) {
+  const salt = randomSalt()
+  let p = db.collection(process.env.USER_COLLECTION).updateOne(
+    { isDeleted: false, _id: ObjectID(userID) },
+    { $set: { updatedTime: Date.now(), password: hashPassword(password, salt), salt } },
+  )
+  p.then(({ matchedCount }) => {
+    if (matchedCount === 1) {
+      deleteTokensByUser(db, userID)
+    }
+  })
+  return p
+}
+
 module.exports = {
   createUser,
   countUsers,
@@ -225,4 +246,5 @@ module.exports = {
   loginByUsername,
   blockUser,
   unblockUser,
+  updateUserPassword,
 }
