@@ -67,6 +67,23 @@ function getParentByID (db, parentID, extra = 'user,student') {
 }
 
 /**
+ * Get parent by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} [extra='user,student']
+ * @returns {Object}
+ */
+function getParentByUser (db, userID, extra = 'user,student') {
+  return db.collection(process.env.PARENT_COLLECTION)
+    .findOne({ isDeleted: false, userID })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Get parents by ids.
  * @param {Object} db
  * @param {Array} parentIDs
@@ -186,14 +203,30 @@ function deleteParent (db, parentID) {
     )
 }
 
+/**
+ * Delete parent by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function deleteParentByUser (db, userID) {
+  return db.collection(process.env.PARENT_COLLECTION)
+    .updateOne(
+      { isDeleted: false, userID },
+      { $set: { isDeleted: true } },
+    )
+}
+
 module.exports = {
   createParent,
   countParents,
   getParents,
   getParentByID,
+  getParentByUser,
   getParentsByIDs,
   updateParent,
   deleteParent,
+  deleteParentByUser,
 }
 
 const { getUsersByIDs, getUserByID } = require('./User')

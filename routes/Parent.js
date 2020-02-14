@@ -78,9 +78,8 @@ router.get('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { parentID } = req.params
-  let { userID, studentID } = req.body
+  let { studentID } = req.body
   let obj = {}
-  if (userID !== undefined) obj.userID = userID
   if (studentID !== undefined) obj.studentID = studentID
   let { db } = req.app.locals
   ParentModel.updateParent(db, parentID, obj)
