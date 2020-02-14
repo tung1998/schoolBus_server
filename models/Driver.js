@@ -81,6 +81,23 @@ function getDriverByID (db, driverID, extra = 'user') {
 }
 
 /**
+ * Get driver by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} [extra='user']
+ * @returns {Object}
+ */
+function getDriverByUser (db, userID, extra = 'user') {
+  return db.collection(process.env.DRIVER_COLLECTION)
+    .findOne({ isDeleted: false, userID })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Get drivers by ids.
  * @param {Object} db
  * @param {Array} driverIDs
@@ -178,14 +195,30 @@ function deleteDriver (db, driverID) {
     )
 }
 
+/**
+ * Delete driver by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function deleteDriverByUser (db, userID) {
+  return db.collection(process.env.DRIVER_COLLECTION)
+    .updateOne(
+      { isDeleted: false, userID },
+      { $set: { isDeleted: true } },
+    )
+}
+
 module.exports = {
   createDriver,
   countDrivers,
   getDrivers,
   getDriverByID,
+  getDriverByUser,
   getDriversByIDs,
   updateDriver,
   deleteDriver,
+  deleteDriverByUser,
 }
 
 const { getUsersByIDs, getUserByID } = require('./User')
