@@ -78,9 +78,8 @@ router.get('/:teacherID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:teacherID([0-9a-fA-F]{24})', (req, res, next) => {
   let { teacherID } = req.params
-  let { schoolID, name } = req.body
+  let { name } = req.body
   let obj = {}
-  if (schoolID !== undefined) obj.schoolID = schoolID
   if (name !== undefined) obj.name = name
   let { db } = req.app.locals
   TeacherModel.updateTeacher(db, teacherID, obj)

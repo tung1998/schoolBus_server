@@ -86,6 +86,24 @@ function getTeachersByIDs (db, teacherIDs, extra = 'school') {
 }
 
 /**
+ * Get teachers by school.
+ * @param {Object} db
+ * @param {Array} schoolID
+ * @param {string} [extra='school']
+ * @returns {Object}
+ */
+function getTeachersBySchool (db, schoolID, extra = 'school') {
+  return db.collection(process.env.TEACHER_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -170,6 +188,7 @@ module.exports = {
   getTeachers,
   getTeacherByID,
   getTeachersByIDs,
+  getTeachersBySchool,
   updateTeacher,
   deleteTeacher,
 }
