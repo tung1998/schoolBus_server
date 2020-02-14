@@ -77,6 +77,23 @@ function getNannyByID (db, nannyID, extra = 'user') {
 }
 
 /**
+ * Get nanny by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} [extra='user']
+ * @returns {Object}
+ */
+function getNannyByUser (db, userID, extra = 'user') {
+  return db.collection(process.env.NANNY_COLLECTION)
+    .findOne({ isDeleted: false, userID })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Get nannies by ids.
  * @param {Object} db
  * @param {Array} nannyIDs
@@ -174,14 +191,30 @@ function deleteNanny (db, nannyID) {
     )
 }
 
+/**
+ * Delete nanny by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function deleteNannyByUser (db, userID) {
+  return db.collection(process.env.NANNY_COLLECTION)
+    .updateOne(
+      { isDeleted: false, userID },
+      { $set: { isDeleted: true } },
+    )
+}
+
 module.exports = {
   createNanny,
   countNannies,
   getNannies,
   getNannyByID,
+  getNannyByUser,
   getNanniesByIDs,
   updateNanny,
   deleteNanny,
+  deleteNannyByUser,
 }
 
 const { getUsersByIDs, getUserByID } = require('./User')

@@ -78,9 +78,8 @@ router.get('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
   let { nannyID } = req.params
-  let { userID, address, image, IDNumber, IDIssueDate, IDIssueBy, status } = req.body
+  let { address, image, IDNumber, IDIssueDate, IDIssueBy, status } = req.body
   let obj = {}
-  if (userID !== undefined) obj.userID = userID
   if (address !== undefined) obj.address = address
   if (image !== undefined) obj.image = image
   if (IDNumber !== undefined) obj.IDNumber = IDNumber
