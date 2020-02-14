@@ -88,6 +88,25 @@ function getClassesByIDs (db, classIDs, extra = 'school,teacher') {
 }
 
 /**
+ * Get classes by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {string} [extra='school,teacher']
+ * @returns {Object}
+ */
+function getClassesBySchool (db, schoolID, extra = 'school,teacher') {
+  return db.collection(process.env.CLASS_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+    .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -188,14 +207,30 @@ function deleteClass (db, classID) {
     )
 }
 
+/**
+ * Delete classes By school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function deleteClassesBySchool (db, schoolID) {
+  return db.collection(process.env.CLASS_COLLECTION)
+    .updateMany(
+      { isDeleted: false, schoolID },
+      { $set: { isDeleted: true } },
+    )
+}
+
 module.exports = {
   createClass,
   countClasses,
   getClasses,
   getClassByID,
   getClassesByIDs,
+  getClassesBySchool,
   updateClass,
   deleteClass,
+  deleteClassesBySchool,
 }
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
