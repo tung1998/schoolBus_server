@@ -264,6 +264,23 @@ function updateTrip (db, tripID, obj) {
 }
 
 /**
+ * Update trip status.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {number} status
+ * @returns {Object}
+ */
+function updateTripStatus (db, tripID, status) {
+  let $set = { updatedTime: Date.now(), status }
+  if (status === TRIP_STATUS_END) $set.endTime = Date.now()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(tripID) },
+      { $set },
+    )
+}
+
+/**
  * Delete trip.
  * @param {Object} db
  * @param {string} tripID
@@ -284,6 +301,7 @@ module.exports = {
   getTripByID,
   getTripsByIDs,
   updateTrip,
+  updateTripStatus,
   deleteTrip,
 }
 

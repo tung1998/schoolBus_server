@@ -115,6 +115,32 @@ router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
     .catch(next)
 })
 
+router.put('/:tripID([0-9a-fA-F]{24})/status', (req, res, next) => {
+  let { tripID } = req.params
+  let { status } = req.body
+  let { db } = req.app.locals
+  TripModel.updateTripStatus(db, tripID, status)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update trip status : _id = ${tripID}`,
+          Date.now(),
+          1,
+          req.body,
+          'trip',
+          tripID,
+        )
+      }
+    })
+    .catch(next)
+})
+
 router.delete('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
   let { db } = req.app.locals
