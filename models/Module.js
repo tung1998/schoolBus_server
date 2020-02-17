@@ -48,8 +48,8 @@ function countModules (db) {
 function getModules (db, page) {
   return db.collection(process.env.MODULE_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    // .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    // .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
 }
 
