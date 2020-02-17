@@ -106,6 +106,32 @@ router.put('/:studentTripID([0-9a-fA-F]{24})', (req, res, next) => {
     .catch(next)
 })
 
+router.put('/:studentTripID([0-9a-fA-F]{24})/status', (req, res, next) => {
+  let { studentTripID } = req.params
+  let { status } = req.body
+  let { db } = req.app.locals
+  StudentTripModel.updateStudentTripStatus(db, studentTripID, status)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update studentTrip status : _id = ${studentTripID}`,
+          Date.now(),
+          1,
+          req.body,
+          'studentTrip',
+          studentTripID,
+        )
+      }
+    })
+    .catch(next)
+})
+
 router.delete('/:studentTripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { studentTripID } = req.params
   let { db } = req.app.locals

@@ -2,7 +2,7 @@ const { ObjectID } = require('mongodb')
 
 const STUDENT_TRIP_STATUS_WAITING = 0 // dang doi
 const STUDENT_TRIP_STATUS_RUNNING = 1 // dang thuc hien
-const STUDENT_TRIP_STATUS_END = 2  // bi nha xe tu choi
+const STUDENT_TRIP_STATUS_END = 2 // bi nha xe tu choi
 
 /**
  * Creats studentTrip.
@@ -197,6 +197,21 @@ function updateStudentTrip (db, studentTripID, obj) {
 }
 
 /**
+ * Update studentTrip status.
+ * @param {Object} db
+ * @param {string} studentTripID
+ * @param {number} status
+ * @returns {Object}
+ */
+function updateStudentTripStatus (db, studentTripID, status) {
+  return db.collection(process.env.STUDENT_TRIP_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(studentTripID) },
+      { $set: { updatedTime: Date.now(), status } },
+    )
+}
+
+/**
  * Delete studentTrip.
  * @param {Object} db
  * @param {string} studentTripID
@@ -218,6 +233,7 @@ module.exports = {
   getStudentTripsByIDs,
   getStudentTripsByTrip,
   updateStudentTrip,
+  updateStudentTripStatus,
   deleteStudentTrip,
 }
 
