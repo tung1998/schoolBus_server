@@ -1,6 +1,12 @@
 const { ObjectID } = require('mongodb')
 const crypto = require('crypto')
 
+const USER_TYPE_ADMINISTRATOR = 0
+const USER_TYPE_STUDENT = 1
+const USER_TYPE_NANY = 2
+const USER_TYPE_PARENT = 3
+const USER_TYPE_DRIVER = 4
+
 /**
  * Creats user.
  * @param {Object} db
