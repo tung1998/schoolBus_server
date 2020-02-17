@@ -3,7 +3,7 @@ const crypto = require('crypto')
 
 const USER_TYPE_ADMINISTRATOR = 0
 const USER_TYPE_STUDENT = 1
-const USER_TYPE_NANY = 2
+const USER_TYPE_NANNY = 2
 const USER_TYPE_PARENT = 3
 const USER_TYPE_DRIVER = 4
 
@@ -111,14 +111,42 @@ function updateUser (db, userID, obj) {
  * Delete user.
  * @param {Object} db
  * @param {string} userID
+ * @param {boolean} [deleteOption=true]
  * @returns {Object}
  */
-function deleteUser (db, userID) {
-  return db.collection(process.env.USER_COLLECTION)
-    .updateOne(
+function deleteUser (db, userID, deleteOption = true) {
+  let p = db.collection(process.env.USER_COLLECTION)
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(userID) },
+      null,
       { $set: { isDeleted: true } },
+      { fields: { _id: 0, userType: 1 } },
     )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+      if (deleteOption) {
+        switch (value.userType) {
+          case USER_TYPE_ADMINISTRATOR:
+            deleteAdministratorByUser(db, userID)
+            break
+          case USER_TYPE_STUDENT:
+            deleteStudentByUser(db, userID)
+            break
+          case USER_TYPE_NANNY:
+            deleteNannyByUser(db, userID)
+            break
+          case USER_TYPE_PARENT:
+            deleteParentByUser(db, userID)
+            break
+          case USER_TYPE_DRIVER:
+            deleteDriverByUser(db, userID)
+            break
+        }
+      }
+      deleteTokensByUser(db, userID)
+    }
+  })
+  return p
 }
 
 /**
@@ -254,3 +282,9 @@ module.exports = {
   unblockUser,
   updateUserPassword,
 }
+
+const { deleteAdministratorByUser } = require('./Administrator')
+const { deleteStudentByUser } = require('./Student')
+const { deleteNannyByUser } = require('./Nanny')
+const { deleteParentByUser } = require('./Parent')
+const { deleteDriverByUser } = require('./Driver')
