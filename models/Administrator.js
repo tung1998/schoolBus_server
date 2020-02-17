@@ -176,11 +176,19 @@ function updateAdministrator (db, administratorID, obj) {
  * @returns {Object}
  */
 function deleteAdministrator (db, administratorID) {
-  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
-    .updateOne(
+  let p = db.collection(process.env.ADMINISTRATOR_COLLECTION)
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(administratorID) },
+      null,
       { $set: { isDeleted: true } },
+      { fields: { _id: 0, userID: 1 } },
     )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+      deleteUser(db, value.userID, false)
+    }
+  })
+  return p
 }
 
 /**
@@ -209,4 +217,4 @@ module.exports = {
   deleteAdministratorByUser,
 }
 
-const { getUsersByIDs, getUserByID } = require('./User')
+const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
