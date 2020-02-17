@@ -188,11 +188,19 @@ function updateDriver (db, driverID, obj) {
  * @returns {Object}
  */
 function deleteDriver (db, driverID) {
-  return db.collection(process.env.DRIVER_COLLECTION)
-    .updateOne(
+  let p = db.collection(process.env.DRIVER_COLLECTION)
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(driverID) },
+      null,
       { $set: { isDeleted: true } },
+      { fields: { _id: 0, userID: 1 } },
     )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+      deleteUser(db, value.userID, false)
+    }
+  })
+  return p
 }
 
 /**
@@ -221,4 +229,4 @@ module.exports = {
   deleteDriverByUser,
 }
 
-const { getUsersByIDs, getUserByID } = require('./User')
+const { getUsersByIDs, getUserByID, deleteUser } = require('./User')

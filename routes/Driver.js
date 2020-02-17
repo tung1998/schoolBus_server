@@ -115,8 +115,8 @@ router.delete('/:driverID([0-9a-fA-F]{24})', (req, res, next) => {
   let { driverID } = req.params
   let { db } = req.app.locals
   DriverModel.deleteDriver(db, driverID)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(
