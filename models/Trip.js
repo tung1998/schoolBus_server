@@ -1,5 +1,10 @@
 const { ObjectID } = require('mongodb')
 
+const TRIP_STATUS_WAITING = 0 // đợi
+const TRIP_STATUS_RUNNING = 1 // tiến hành
+const TRIP_STATUS_END = 2 // kết thúc
+const TRIP_STATUS_CANCEL = 3 // hủy
+
 /**
  * Creats trip.
  * @param {Object} db
@@ -10,14 +15,14 @@ const { ObjectID } = require('mongodb')
  * @param {string} studentListID
  * @param {Array} attendance
  * @param {number} type
- * @param {number} status
+ * @param {number} [status=TRIP_STATUS_WAITING]
  * @param {string} note
  * @param {Array} accident
  * @param {number} startTime
  * @param {number} endTime
  * @returns {Object}
  */
-function createTrip (db, carID, driverID, nannyID, routeID, studentListID, attendance, type, status, note, accident, startTime, endTime) {
+function createTrip (db, carID, driverID, nannyID, routeID, studentListID, attendance, type, status = TRIP_STATUS_WAITING, note, accident, startTime, endTime) {
   return db.collection(process.env.TRIP_COLLECTION)
     .insertOne({
       carID,
