@@ -1,14 +1,18 @@
 const { ObjectID } = require('mongodb')
 
+const STUDENT_TRIP_STATUS_WAITING = 0 // dang doi
+const STUDENT_TRIP_STATUS_RUNNING = 1 // dang thuc hien
+const STUDENT_TRIP_STATUS_END = 2  // bi nha xe tu choi
+
 /**
  * Creats studentTrip.
  * @param {Object} db
  * @param {string} tripID
  * @param {string} studentID
- * @param {number} status
+ * @param {number} [status=STUDENT_TRIP_STATUS_WAITING]
  * @returns {Object}
  */
-function createStudentTrip (db, tripID, studentID, status) {
+function createStudentTrip (db, tripID, studentID, status = STUDENT_TRIP_STATUS_WAITING) {
   return db.collection(process.env.STUDENT_TRIP_COLLECTION)
     .insertOne({
       tripID,
