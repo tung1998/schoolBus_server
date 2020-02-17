@@ -196,11 +196,19 @@ function updateParent (db, parentID, obj) {
  * @returns {Object}
  */
 function deleteParent (db, parentID) {
-  return db.collection(process.env.PARENT_COLLECTION)
-    .updateOne(
+  let p = db.collection(process.env.PARENT_COLLECTION)
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(parentID) },
+      null,
       { $set: { isDeleted: true } },
+      { fields: { _id: 0, userID: 1 } },
     )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+      deleteUser(db, value.userID, false)
+    }
+  })
+  return p
 }
 
 /**
@@ -229,5 +237,5 @@ module.exports = {
   deleteParentByUser,
 }
 
-const { getUsersByIDs, getUserByID } = require('./User')
+const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
 const { getStudentsByIDs, getStudentByID } = require('./Student')

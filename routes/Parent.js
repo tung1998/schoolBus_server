@@ -108,8 +108,8 @@ router.delete('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { parentID } = req.params
   let { db } = req.app.locals
   ParentModel.deleteParent(db, parentID)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(
