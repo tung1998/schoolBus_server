@@ -184,11 +184,19 @@ function updateNanny (db, nannyID, obj) {
  * @returns {Object}
  */
 function deleteNanny (db, nannyID) {
-  return db.collection(process.env.NANNY_COLLECTION)
-    .updateOne(
+  let p = db.collection(process.env.NANNY_COLLECTION)
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(nannyID) },
+      null,
       { $set: { isDeleted: true } },
+      { fields: { _id: 0, userID: 1 } },
     )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+      deleteUser(db, value.userID, false)
+    }
+  })
+  return p
 }
 
 /**
@@ -217,4 +225,4 @@ module.exports = {
   deleteNannyByUser,
 }
 
-const { getUsersByIDs, getUserByID } = require('./User')
+const { getUsersByIDs, getUserByID, deleteUser } = require('./User')

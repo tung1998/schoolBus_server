@@ -113,8 +113,8 @@ router.delete('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
   let { nannyID } = req.params
   let { db } = req.app.locals
   NannyModel.deleteNanny(db, nannyID)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(
