@@ -222,11 +222,19 @@ function updateStudent (db, studentID, obj) {
  * @returns {Object}
  */
 function deleteStudent (db, studentID) {
-  return db.collection(process.env.STUDENT_COLLECTION)
-    .updateOne(
+  let p = db.collection(process.env.STUDENT_COLLECTION)
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(studentID) },
+      null,
       { $set: { isDeleted: true } },
+      { fields: { _id: 0, userID: 1 } },
     )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+      deleteUser(db, value.userID, false)
+    }
+  })
+  return p
 }
 
 /**
@@ -256,5 +264,5 @@ module.exports = {
   deleteStudentByUser,
 }
 
-const { getUsersByIDs, getUserByID } = require('./User')
+const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
 const { getClassesByIDs, getClassByID } = require('./Class')

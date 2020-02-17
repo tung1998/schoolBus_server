@@ -112,8 +112,8 @@ router.delete('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { studentID } = req.params
   let { db } = req.app.locals
   StudentModel.deleteStudent(db, studentID)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(
