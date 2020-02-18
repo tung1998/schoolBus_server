@@ -165,4 +165,12 @@ router.post('/search', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/byTypeInRoute', (req, res, next) => {
+  let { type, routeID } = req.query
+  let { db } = req.app.locals
+  CarStopModel.getCarStopsByTypeInRoute(type, db, routeID)
+    .then(carStops => res.send(carStops))
+    .catch(next)
+})
+
 module.exports = router
