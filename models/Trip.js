@@ -111,6 +111,86 @@ function getTripsByIDs (db, tripIDs, extra = 'car,driver,nanny,route,studentList
 }
 
 /**
+ * Get trips by nanny.
+ * @param {Object} db
+ * @param {string} nannyID
+ * @param {number} start
+ * @param {number} end
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} extra
+ * @param {number} startTimeSortValue
+ * @returns {Object}
+ */
+function getTripsByNanny (db, nannyID, start, end, sortBy, sortType, limit, page, extra, startTimeSortValue) {
+  let query = { nannyID, status: { $in: [TRIP_STATUS_WAITING, TRIP_STATUS_RUNNING, TRIP_STATUS_END] } }
+  if (start !== undefined && end !== undefined) query.startTime = { $gte: start, $lt: end }
+  return get(db, query, sortBy, sortType, limit, page, extra, startTimeSortValue)
+}
+
+/**
+ * Get trips by route.
+ * @param {Object} db
+ * @param {string} routeID
+ * @param {number} start
+ * @param {number} end
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} extra
+ * @param {number} startTimeSortValue
+ * @returns {Object}
+ */
+function getTripsByRoute (db, routeID, start, end, sortBy, sortType, limit, page, extra, startTimeSortValue) {
+  let query = { routeID, status: { $in: [TRIP_STATUS_WAITING, TRIP_STATUS_RUNNING, TRIP_STATUS_END] } }
+  if (start !== undefined && end !== undefined) query.startTime = { $gte: start, $lt: end }
+  return get(db, query, sortBy, sortType, limit, page, extra, startTimeSortValue)
+}
+
+/**
+ * Get trips by car.
+ * @param {Object} db
+ * @param {string} carID
+ * @param {number} start
+ * @param {number} end
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} extra
+ * @param {number} startTimeSortValue
+ * @returns {Object}
+ */
+function getTripsByCar (db, carID, start, end, sortBy, sortType, limit, page, extra, startTimeSortValue) {
+  let query = { carID, status: { $in: [TRIP_STATUS_WAITING, TRIP_STATUS_RUNNING, TRIP_STATUS_END] } }
+  if (start !== undefined && end !== undefined) query.startTime = { $gte: start, $lt: end }
+  return get(db, query, sortBy, sortType, limit, page, extra, startTimeSortValue)
+}
+
+/**
+ * Get trips by driver.
+ * @param {Object} db
+ * @param {string} driverID
+ * @param {number} start
+ * @param {number} end
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} extra
+ * @param {number} startTimeSortValue
+ * @returns {Object}
+ */
+function getTripsByDriver (db, driverID, start, end, sortBy, sortType, limit, page, extra, startTimeSortValue) {
+  let query = { driverID, status: { $in: [TRIP_STATUS_WAITING, TRIP_STATUS_RUNNING, TRIP_STATUS_END] } }
+  if (start !== undefined && end !== undefined) query.startTime = { $gte: start, $lt: end }
+  return get(db, query, sortBy, sortType, limit, page, extra, startTimeSortValue)
+}
+
+/**
  * Get.
  * @param {Object} db
  * @param {Object} query
@@ -339,6 +419,10 @@ module.exports = {
   getTrips,
   getTripByID,
   getTripsByIDs,
+  getTripsByNanny,
+  getTripsByRoute,
+  getTripsByCar,
+  getTripsByDriver,
   updateTrip,
   updateTripStatus,
   deleteTrip,
