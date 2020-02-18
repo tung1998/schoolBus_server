@@ -150,4 +150,19 @@ router.get('/:carStopID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.post('/search', (req, res, next) => {
+  let { name, address } = req.body
+  let { extra } = req.query
+  let db = req.app.locals.db
+  let result = {}
+  CarStopModel.getCarStopsBySearch(db, name, address, extra)
+    .then((data) => {
+      result.data = data
+      result.count = data.length
+      result.page = 1
+      res.send(result)
+    })
+    .catch(next)
+})
+
 module.exports = router

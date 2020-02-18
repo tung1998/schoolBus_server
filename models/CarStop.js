@@ -100,6 +100,34 @@ function deleteCarStop (db, carStopID) {
     )
 }
 
+/**
+ * Trả về tất cả Carstops theo IDs
+ * @param {Object} db
+ * @param {Boolean} extra
+ * @return {Object} 
+ */
+function getCarStopsBySearch (db, name, address, extra = true) {
+  return new Promise((resolve, reject) => {
+    let condition = { isDeleted: false }
+    if (name) {
+      condition.name = { '$regex': name, $options: "i" }
+    }
+    if (address) {
+      condition.address = { '$regex': address, $options: "i" }
+    }
+    db.collection(process.env.CAR_STOP_COLLECTION)
+      .find(condition)
+      .toArray()
+      .then(carStops => {
+        if (!carStops.length) resolve([])
+        else {
+          resolve(carStops)
+        }
+      })
+      .catch(reject)
+    })
+}
+
 module.exports = {
   createCarStop,
   countCarStops,
@@ -108,4 +136,5 @@ module.exports = {
   getCarStopsByIDs,
   updateCarStop,
   deleteCarStop,
+  getCarStopsBySearch,
 }
