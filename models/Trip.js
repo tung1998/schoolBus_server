@@ -111,6 +111,45 @@ function getTripsByIDs (db, tripIDs, extra = 'car,driver,nanny,route,studentList
 }
 
 /**
+ * Get.
+ * @param {Object} db
+ * @param {Object} query
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} extra
+ * @param {number} startTimeSortValue
+ * @returns {Object}
+ */
+function get (db, query, sortBy, sortType, limit, page, extra, startTimeSortValue) {
+  if (query.isDeleted === undefined) query.isDeleted = false
+  let keyOnList = {}
+  if (sortBy) {
+    sortBy = sortBy.split(',')
+    if (sortType) sortType = sortType.split(',')
+    sortBy.forEach((e, i) => {
+      keyOnList[e] = sortType ? (Number(sortType[i]) || 1) : 1
+    })
+  }
+  if (keyOnList.startTime === undefined && startTimeSortValue !== undefined) keyOnList.startTime = startTimeSortValue
+  if (!limit) limit = Number(process.env.LIMIT_DOCUMENT_PER_PAGE)
+  if (!page) page = 1
+  let p = db.collection(process.env.TRIP_COLLECTION)
+    .find(query)
+    .limit(limit)
+    .skip(limit * (page - 1))
+    .sort(keyOnList)
+    .toArray()
+  p = p.then((trips) => {
+    if (trips.length === 0) return []
+    if (!extra) return trips
+    return addExtra(db, trips, extra)
+  })
+  return p
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
