@@ -153,4 +153,13 @@ router.get('/:moduleID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/init', (req, res, next) => {
+  let { db } = req.app.locals
+  ModuleModel.initModule(db)
+    .then((result) => {
+      res.send(result)
+    })
+    .catch(next)
+})
+
 module.exports = router

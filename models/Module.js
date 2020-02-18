@@ -1,5 +1,7 @@
 const { ObjectID } = require('mongodb')
 
+const initData = []
+
 /**
  * Creats module.
  * @param {Object} db
@@ -106,6 +108,26 @@ function deleteModule (db, moduleID) {
     )
 }
 
+function initModule(db) {
+  console.log('Start Init')
+  return new Promise((resolve, reject) => {
+    db.createCollection(process.env.MODULE_COLLECTION, function(err, collection) {
+      if (err) {
+        console.log(err)
+        reject(err.message)
+      } else {
+        console.log(collection)
+      }
+    })
+    db.collection(process.env.MODULE_COLLECTION).ensureIndex( { route: 1 }, { unique: true })
+    initData.forEach((item) => {
+      db.collection(process.env.MODULE_COLLECTION).insert(item)
+    })
+    // db.collection(process.env.MODULE_COLLECTION).distinct("route")
+    resolve()
+  })
+}
+
 module.exports = {
   createModule,
   countModules,
@@ -114,4 +136,5 @@ module.exports = {
   getModulesByIDs,
   updateModule,
   deleteModule,
+  initModule,
 }
