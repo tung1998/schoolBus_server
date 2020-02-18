@@ -269,6 +269,26 @@ function updateUserPassword (db, userID, password) {
   return p
 }
 
+/**
+ * Get user by phone.
+ * @param {Object} db
+ * @param {string} phone
+ * @returns {Object}
+ */
+function getUserByPhone (db, phone) {
+  return db.collection(process.env.USER_COLLECTION).findOne({ isDeleted: false, phone })
+}
+
+/**
+ * Get user by email.
+ * @param {Object} db
+ * @param {string} email
+ * @returns {Object}
+ */
+function getUserByEmail (db, email) {
+  return db.collection(process.env.USER_COLLECTION).findOne({ isDeleted: false, email })
+}
+
 module.exports = {
   createUser,
   countUsers,
@@ -281,6 +301,8 @@ module.exports = {
   blockUser,
   unblockUser,
   updateUserPassword,
+  getUserByPhone,
+  getUserByEmail,
 }
 
 const { deleteAdministratorByUser } = require('./Administrator')

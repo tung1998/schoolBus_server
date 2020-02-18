@@ -251,4 +251,26 @@ router.put('/:userID([0-9a-fA-F]{24})/password', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/byPhone', (req, res, next) => {
+  let { phone } = req.query
+  let { db } = req.app.locals
+  UserModel.getUserByPhone(db, phone)
+    .then((v) => {
+      if (v === null) res.status(404).send({ message: 'Not Found' })
+      else res.send(v)
+    })
+    .catch(next)
+})
+
+router.get('/byEmail', (req, res, next) => {
+  let { email } = req.query
+  let { db } = req.app.locals
+  UserModel.getUserByEmail(db, email)
+    .then((v) => {
+      if (v === null) res.status(404).send({ message: 'Not Found' })
+      else res.send(v)
+    })
+    .catch(next)
+})
+
 module.exports = router
