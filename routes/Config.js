@@ -148,4 +148,14 @@ router.get('/:configID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/init', (req, res, next) => {
+  let { db } = req.app.locals
+  data.forEach((item) => {
+    ConfigModel.createConfig(db, item.name, item.value)
+  })
+  res.send({success: true})
+})
+
+const data = []
+
 module.exports = router
