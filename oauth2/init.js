@@ -41,7 +41,7 @@ function authentication (req, next, cancel) {
 function tokenExtend (req) {
   let result = {
     userID: String(req.user._id),
-    userType: req.user.userType,
+    type: req.user.userType,
   }
   return result
 }

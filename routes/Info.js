@@ -16,7 +16,7 @@ const USER_TYPE_DRIVER = 4
 
 router.get('/', (req, res, next) => {
   let db = req.app.locals.db
-  let userType = Number(req.token.userType) || 0
+  let userType = Number(req.token.type) || 0
   getModules(db).then((modules) => {
     let human = ''
     switch (userType) {
