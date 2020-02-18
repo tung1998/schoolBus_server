@@ -17,6 +17,7 @@ router.use((req, res, next) => {
 })
 
 router.use('/Info', require('./Info'))
+router.use('/Token', require('./Token'))
 router.use('/Log', require('./Log'))
 router.use('/User', require('./User'))
 router.use('/Administrator', require('./Administrator'))
