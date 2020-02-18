@@ -11,7 +11,7 @@ const USER_TYPE_DRIVER = 4
  * Creats user.
  * @param {Object} db
  * @param {string} username
- * @param {string} password
+ * @param {string} password='12345678'
  * @param {string} image
  * @param {string} name
  * @param {string} phone
@@ -19,7 +19,7 @@ const USER_TYPE_DRIVER = 4
  * @param {number} userType
  * @returns {Object}
  */
-function createUser (db, username, password, image, name, phone, email, userType) {
+function createUser (db, username, password = '12345678', image, name, phone, email, userType) {
   let salt = randomSalt()
   return db.collection(process.env.USER_COLLECTION)
     .insertOne({
