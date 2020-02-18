@@ -152,4 +152,17 @@ router.get('/:carStopTripID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/getByTrip/:page(\\d+)', (req, res, next) => {
+  let extra = req.query.extra
+  let page = Number(req.params.page)
+  if (!page || page <= 0) res.status(404).send({ message: 'Page not found' })
+  else {
+    let tripID = req.query.tripID
+    let db = req.app.locals.db
+    CarStopTripModel.getCarStopTripsByTrip(db, tripID, page, extra)
+      .then(CarStopTrips => res.send(CarStopTrips))
+      .catch(next)
+  }
+})
+
 module.exports = router

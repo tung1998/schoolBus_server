@@ -88,6 +88,27 @@ function getCarStopTripsByIDs (db, carStopTripIDs, extra = 'carStop,trip') {
 }
 
 /**
+ * Get carStopTrips by trip.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {number} [page=1]
+ * @param {string} [extra='carStop,trip']
+ * @returns {Object}
+ */
+function getCarStopTripsByTrip (db, tripID, page = 1, extra = 'carStop,trip') {
+  return db.collection(process.env.CAR_STOP_TRIP_COLLECTION)
+    .find({ isDeleted: false, tripID })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -192,6 +213,7 @@ module.exports = {
   createCarStopTrip,
   countCarStopTrips,
   getCarStopTrips,
+  getCarStopTripsByTrip,
   getCarStopTripByID,
   getCarStopTripsByIDs,
   updateCarStopTrip,
