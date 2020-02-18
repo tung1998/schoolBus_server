@@ -52,6 +52,21 @@ function getTripLocations (db, page, extra = 'trip') {
 }
 
 /**
+ * Get tripLocations by trip.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {number} [page=1]
+ * @returns {Object}
+ */
+function getTripLocationsByTrip (db, tripID, page = 1) {
+  return db.collection(process.env.TRIP_LOCATION_COLLECTION)
+    .find({ isDeleted: false, tripID })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+}
+
+/**
  * Get tripLocation by id.
  * @param {Object} db
  * @param {string} tripLocationID
@@ -174,6 +189,7 @@ module.exports = {
   getTripLocationsByIDs,
   updateTripLocation,
   deleteTripLocation,
+  getTripLocationsByTrip,
 }
 
 const { getTripsByIDs, getTripByID } = require('./Trip')

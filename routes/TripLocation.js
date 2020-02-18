@@ -152,4 +152,13 @@ router.get('/:tripLocationID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/byTrip', (req, res, next) => {
+  let tripID = req.query.tripID
+  let db = req.app.locals.db
+  TripLocationModel.getTripLocationsByTrip(db, tripID)
+    .then(TripLocations => res.send(TripLocations))
+    .catch(next)
+
+})
+
 module.exports = router
