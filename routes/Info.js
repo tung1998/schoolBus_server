@@ -82,9 +82,9 @@ router.get('/', (req, res, next) => {
       default:
         getAdministratorByUser(db, req.token.userID, 'user')
           .then((admin) => {
-            if (!admin)
+            if (!admin) {
               next()
-            else {
+            } else {
               delete admin.user.password
               delete admin.user.salt
               admin.modules = listModules
