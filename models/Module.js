@@ -108,10 +108,10 @@ function deleteModule (db, moduleID) {
     )
 }
 
-function initModule(db) {
+function initModule (db) {
   console.log('Start Init')
   return new Promise((resolve, reject) => {
-    db.createCollection(process.env.MODULE_COLLECTION, function(err, collection) {
+    db.createCollection(process.env.MODULE_COLLECTION, function (err, collection) {
       if (err) {
         console.log(err)
         reject(err.message)
@@ -119,7 +119,7 @@ function initModule(db) {
         console.log(collection)
       }
     })
-    db.collection(process.env.MODULE_COLLECTION).ensureIndex( { route: 1 }, { unique: true })
+    db.collection(process.env.MODULE_COLLECTION).ensureIndex({ route: 1 }, { unique: true })
     initData.forEach((item) => {
       db.collection(process.env.MODULE_COLLECTION).insert(item)
     })
