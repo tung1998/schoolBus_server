@@ -1,5 +1,8 @@
 const { ObjectID } = require('mongodb')
 
+const NOTIFICATION_STATUS_UN_READ = 0
+const NOTIFICATION_STATUS_READ = 1
+
 /**
  * Creats notification.
  * @param {Object} db
@@ -7,11 +10,11 @@ const { ObjectID } = require('mongodb')
  * @param {string} userID
  * @param {string} title
  * @param {string} content
- * @param {number} status
+ * @param {number} [status=NOTIFICATION_STATUS_UN_READ]
  * @param {string} createdBy
  * @returns {Object}
  */
-function createNotification (db, type, userID, title, content, status, createdBy) {
+function createNotification (db, type, userID, title, content, status = NOTIFICATION_STATUS_UN_READ, createdBy) {
   return db.collection(process.env.NOTIFICATION_COLLECTION)
     .insertOne({
       type,
@@ -34,6 +37,18 @@ function createNotification (db, type, userID, title, content, status, createdBy
 function countNotifications (db) {
   return db.collection(process.env.NOTIFICATION_COLLECTION)
     .find({ isDeleted: false })
+    .count()
+}
+
+/**
+ * Count notifications by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function countNotificationsByUser (db, userID) {
+  return db.collection(process.env.NOTIFICATION_COLLECTION)
+    .find({ isDeleted: false, userID })
     .count()
 }
 
@@ -91,6 +106,49 @@ function getNotificationsByIDs (db, notificationIDs, extra = 'user') {
       return addExtra(db, v, extra)
     })
     .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
+}
+
+/**
+ * Hàm lấy tất cả Notification theo User theo page
+ * @param {Object} db
+ * @param {String} userID
+ * @param {Number} page
+ * @param {Sring} extra
+ * @return {Object}
+ */
+function getNotificationsByUser (db, userID, page = 1, extra = 'user') {
+  return db.collection(process.env.NOTIFICATION_COLLECTION)
+    .find({ isDeleted: false, userID })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE) * 10)
+    .sort({ _id: -1 })
+    .toArray()
+    .then(notifications => {
+      if (notifications.length === 0) return []
+      if (!extra) return notifications
+      return addExtra(db, notifications, extra)
+    })
+}
+
+/**
+ * Hàm lấy tất cả Notification chưa đọc của User theo page
+ * @param {Object} db
+ * @param {String} userID
+ * @param {Number} page
+ * @param {String} extra
+ * @return {Object}
+ */
+function getUnreadNotificationsByUser (db, userID, page = 1, extra = 'user') {
+  return db.collection(process.env.NOTIFICATION_COLLECTION)
+    .find({ isDeleted: false, userID, status: NOTIFICATION_STATUS_UN_READ })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then(notifications => {
+      if (notifications.length === 0) return []
+      if (!extra) return notifications
+      return addExtra(db, notifications, extra)
+    })
 }
 
 /**
@@ -159,6 +217,20 @@ function updateNotification (db, notificationID, obj) {
 }
 
 /**
+ * Cập nhật trạng thái Notification
+ * @param {Object} db
+ * @param {String} notificationID
+ * @param {Number} status
+ */
+function updateNotificationStatus (db, notificationID, status) {
+  return db.collection(process.env.NOTIFICATION_COLLECTION)
+    .updateOne(
+      { _id: ObjectID(notificationID), isDeleted: false },
+      { $set: { status, updatedTime: Date.now() } },
+    )
+}
+
+/**
  * Delete notification.
  * @param {Object} db
  * @param {string} notificationID
@@ -172,14 +244,58 @@ function deleteNotification (db, notificationID) {
     )
 }
 
+/**
+ * Filter notifications
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} extra
+ * @returns {Object}
+ */
+function filterNotifications (db, userID, sortBy, sortType, limit, page, extra = 'user') {
+  let keyOnList = {}
+  if (sortBy !== undefined) {
+    sortBy = sortBy.split(',')
+    if (sortType !== undefined) {
+      sortType = sortType.split(',')
+    }
+    sortBy.forEach((cur, i) => {
+      keyOnList[cur] = sortType === undefined || sortType[i] === undefined
+        ? 1
+        : Number(sortType[i])
+    })
+  }
+  if (limit === undefined) limit = Number(process.env.LIMIT_DOCUMENT_PER_PAGE)
+  if (page === undefined) page = 1
+  return db.collection(process.env.NOTIFICATION_COLLECTION)
+    .find({ isDeleted: false, userID })
+    .sort(keyOnList)
+    .skip(limit * (page - 1))
+    .limit(limit)
+    .toArray()
+    .then((notifications) => {
+      if (notifications.length === 0) return []
+      if (!extra) return notifications
+      return addExtra(db, notifications, extra)
+    })
+}
+
 module.exports = {
   createNotification,
   countNotifications,
+  countNotificationsByUser,
   getNotifications,
   getNotificationByID,
   getNotificationsByIDs,
+  getNotificationsByUser,
+  getUnreadNotificationsByUser,
   updateNotification,
+  updateNotificationStatus,
   deleteNotification,
+  filterNotifications,
 }
 
 const { getUsersByIDs, getUserByID } = require('./User')

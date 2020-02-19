@@ -5,7 +5,8 @@ const NotificationModel = require('./../models/Notification')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { type, userID, title, content, status, createdBy } = req.body
+  let { type, userID, title, content, status } = req.body
+  let createdBy = (req.token) ? req.token.userID : null
   let { db } = req.app.locals
   NotificationModel.createNotification(db, type, userID, title, content, status, createdBy)
     .then(({ insertedId }) => {
@@ -30,24 +31,39 @@ router.get('/', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
   let result = {}
-  NotificationModel.getNotifications(db, 1, extra)
-    .then((data) => {
-      result.data = data
-      return NotificationModel.countNotifications(db)
-    })
-    .then((cnt) => {
-      result.count = cnt
-      result.page = 1
-      res.send(result)
-    })
-    .catch(next)
+  let page = 1
+  if (req.token && req.token.type !== 0) {
+    NotificationModel.getNotificationsByUser(db, String(req.token.userID), page, extra)
+      .then((data) => {
+        result.data = data
+        return NotificationModel.countNotificationsByUser(db, String(req.token.userID))
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = page
+        res.send(result)
+      })
+      .catch(next)
+  } else {
+    NotificationModel.getNotifications(db, page, extra)
+      .then((data) => {
+        result.data = data
+        return NotificationModel.countNotifications(db)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = page
+        res.send(result)
+      })
+      .catch(next)
+  }
 })
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
   let page = Number(req.params.page)
-  if (!page || page <= 0) res.status(404).send({ message: 'Page not found' })
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
     NotificationModel.getNotifications(db, page, extra)
@@ -152,6 +168,102 @@ router.get('/:notificationID([0-9a-fA-F]{24})/Log', (req, res, next) => {
   page = Number(page)
   LogModel.getLogsByObject(db, 'notification', notificationID, sortBy, sortType, limit, page, extra)
     .then(v => res.send(v))
+    .catch(next)
+})
+
+router.get('/getByUser/:page(\\d+)', (req, res, next) => {
+  let extra = req.query.extra
+  let page = Number(req.params.page)
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
+  else {
+    let userID = req.query.userID
+    let db = req.app.locals.db
+    NotificationModel.getNotificationsByUser(db, userID, page, extra)
+      .then(Notifications => res.send(Notifications))
+      .catch(next)
+  }
+})
+
+router.get('/unread/getByUser/:page(\\d+)', (req, res, next) => {
+  let extra = req.query.extra
+  let page = Number(req.params.page)
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
+  else {
+    let userID = req.query.userID
+    let db = req.app.locals.db
+    NotificationModel.getUnreadNotificationsByUser(db, userID, page, extra)
+      .then(Notifications => res.send(Notifications))
+      .catch(next)
+  }
+})
+
+router.put('/:notificationID([0-9a-fA-F]{24})/status', (req, res, next) => {
+  let { notificationID } = req.params
+  let { status } = req.body
+  let { db } = req.app.locals
+  NotificationModel.updateNotificationStatus(db, notificationID, status)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update notification status : _id = ${notificationID}`,
+          Date.now(),
+          1,
+          req.body,
+          'notification',
+          notificationID,
+        )
+      }
+    })
+    .catch(next)
+})
+
+router.get('/filter', (req, res, next) => {
+  let { db } = req.app.locals
+  let { userID } = req.token
+  let { sortBy, sortType, limit, page, extra } = req.query
+  if (limit !== undefined) limit = Number(limit)
+  if (page !== undefined) page = Number(page)
+  NotificationModel.filterNotifications(db, userID, sortBy, sortType, limit, page, extra)
+    .then((value) => {
+      res.send(value)
+    })
+    .catch(next)
+})
+
+router.put('/', (req, res, next) => {
+  let { db } = req.app.locals
+  let notifications = req.body
+  let arr = notifications.map(({ _id, ...obj }) => (
+    NotificationModel.updateNotification(db, _id, obj)
+      .then(({ matchedCount }) => {
+        if (matchedCount === 1) {
+          LogModel.createLog(
+            db,
+            req.token ? req.token.userID : null,
+            req.headers['user-agent'],
+            req.ip,
+            `Update Notification : _id = ${_id}`,
+            Date.now(),
+            1,
+            obj,
+            'notification',
+            _id,
+          )
+          return { _id, message: 'OK' }
+        }
+        return { _id, message: 'Not Found' }
+      })
+  ))
+  Promise.all(arr)
+    .then((value) => {
+      res.send(value)
+    })
     .catch(next)
 })
 
