@@ -104,16 +104,16 @@ function deleteCarStop (db, carStopID) {
  * Trả về tất cả Carstops theo IDs
  * @param {Object} db
  * @param {Boolean} extra
- * @return {Object} 
+ * @return {Object}
  */
 function getCarStopsBySearch (db, name, address, extra = true) {
   return new Promise((resolve, reject) => {
     let condition = { isDeleted: false }
     if (name) {
-      condition.name = { '$regex': name, $options: "i" }
+      condition.name = { $regex: name, $options: 'i' }
     }
     if (address) {
-      condition.address = { '$regex': address, $options: "i" }
+      condition.address = { $regex: address, $options: 'i' }
     }
     db.collection(process.env.CAR_STOP_COLLECTION)
       .find(condition)
@@ -125,7 +125,7 @@ function getCarStopsBySearch (db, name, address, extra = true) {
         }
       })
       .catch(reject)
-    })
+  })
 }
 
 /** Get carStops by type in route
@@ -205,14 +205,13 @@ function getTakeoffCarStops (db, routeID) {
       const carStopIDs = routes.reduce((accumulator, { requireCarStop, takeoffCarStop }) => {
         // accumulator.push(ObjectID(requireCarStop[0].carStopID))
         takeoffCarStop.forEach(({ carStopID, hide }) => {
-            if (hide === false) accumulator.push(ObjectID(carStopID))
+          if (hide === false) accumulator.push(ObjectID(carStopID))
         })
         return accumulator
       }, [])
       return getCarStopsByIDs(db, carStopIDs).then(Object.values)
     })
 }
-
 
 /**
  * Get pickup carStops
@@ -232,7 +231,7 @@ function getRequireCarStopsByRoute (db, routeID) {
     })
     .toArray()
     .then((routes) => {
-      const carStopIDs = routes.reduce((accumulator, { requireCarStop,  }) => {
+      const carStopIDs = routes.reduce((accumulator, { requireCarStop }) => {
         requireCarStop.forEach(({ carStopID, hide }) => {
           if (hide === false) accumulator.push(ObjectID(carStopID))
         })
