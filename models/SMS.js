@@ -1,16 +1,19 @@
 const { ObjectID } = require('mongodb')
 
+const SMS_STATUS_CREATED = 0
+const SMS_STATUS_SENT = 1
+
 /**
  * Creats SMS.
  * @param {Object} db
  * @param {string} userID
  * @param {string} phoneNumber
  * @param {string} content
- * @param {number} status
+ * @param {number} status=SMS_STATUS_CREATED
  * @param {number} price
  * @returns {Object}
  */
-function createSMS (db, userID, phoneNumber, content, status, price) {
+function createSMS (db, userID, phoneNumber, content, status = SMS_STATUS_CREATED, price) {
   return db.collection(process.env.SMS_COLLECTION)
     .insertOne({
       userID,
@@ -56,6 +59,46 @@ function getSMS (db, page, extra = 'user') {
 }
 
 /**
+ * Get unsent SMS.
+ * @param {Object} db
+ * @param {number} page
+ * @param {string} [extra='user']
+ * @returns {Object}
+ */
+function getUnsentSMS (db, page, extra = 'user') {
+  return db.collection(process.env.SMS_COLLECTION)
+    .find({ isDeleted: false, status: SMS_STATUS_CREATED })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get sent SMS.
+ * @param {Object} db
+ * @param {number} page
+ * @param {string} [extra='user']
+ * @returns {Object}
+ */
+function getSentSMS (db, page, extra = 'user') {
+  return db.collection(process.env.SMS_COLLECTION)
+    .find({ isDeleted: false, status: SMS_STATUS_SENT })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Get SMS by id.
  * @param {Object} db
  * @param {string} SMSID
@@ -89,6 +132,21 @@ function getSMSByIDs (db, SMSIDs, extra = 'user') {
       return addExtra(db, v, extra)
     })
     .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
+}
+
+/**
+ * Trả về tất cả SMS của User theo page
+ * @param {Object} db
+ * @param {String} userID
+ * @param {Integer} page
+ * @return {Object}
+ */
+function getSMSByUser (db, userID, page = 1) {
+  return db.collection(process.env.SMS_COLLECTION)
+    .find({ userID, isDeleted: false })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
 }
 
 /**
@@ -157,6 +215,20 @@ function updateSMS (db, SMSID, obj) {
 }
 
 /**
+ * Cập nhật trạng thái SMS
+ * @param {Object} db
+ * @param {String} smsID
+ * @param {String} SMSStatus
+ */
+function updateSMSStatus (db, smsID, SMSStatus) {
+  return db.collection(process.env.SMS_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(smsID) },
+      { $set: { updatedTime: Date.now(), status: SMSStatus } },
+    )
+}
+
+/**
  * Delete SMS.
  * @param {Object} db
  * @param {string} SMSID
@@ -174,9 +246,13 @@ module.exports = {
   createSMS,
   countSMS,
   getSMS,
+  getUnsentSMS,
+  getSentSMS,
   getSMSByID,
+  getSMSByUser,
   getSMSByIDs,
   updateSMS,
+  updateSMSStatus,
   deleteSMS,
 }
 

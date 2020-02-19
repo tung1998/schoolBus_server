@@ -47,7 +47,7 @@ router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
   let page = Number(req.params.page)
-  if (!page || page <= 0) res.status(404).send({ message: 'Page not found' })
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
     SMSModel.getSMS(db, page, extra)
@@ -151,6 +151,68 @@ router.get('/:SMSID([0-9a-fA-F]{24})/Log', (req, res, next) => {
   page = Number(page)
   LogModel.getLogsByObject(db, 'SMS', SMSID, sortBy, sortType, limit, page, extra)
     .then(v => res.send(v))
+    .catch(next)
+})
+
+router.get('/unsent/:page(\\d+)', (req, res, next) => {
+  let { extra } = req.query
+  let page = Number(req.params.page)
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
+  else {
+    let db = req.app.locals.db
+    SMSModel.getUnsentSMS(db, page, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+})
+
+router.get('/sent/:page(\\d+)', (req, res, next) => {
+  let { extra } = req.query
+  let page = Number(req.params.page)
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
+  else {
+    let db = req.app.locals.db
+    SMSModel.getSentSMS(db, page, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+})
+
+router.get('/getByUser/:page(\\d+)', (req, res, next) => {
+  let page = Number(req.params.page)
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
+  else {
+    let userID = req.query.userID
+    let db = req.app.locals.db
+    SMSModel.getSMSByUser(db, userID, page)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+})
+
+router.put('/:SMSID([0-9a-fA-F]{24})/status', (req, res, next) => {
+  let { SMSID } = req.params
+  let { status } = req.body
+  let { db } = req.app.locals
+  SMSModel.updateSMSStatus(db, SMSID, status)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update SMS status: _id = ${SMSID}`,
+          Date.now(),
+          1,
+          req.body,
+          'SMS',
+          SMSID,
+        )
+      }
+    })
     .catch(next)
 })
 
