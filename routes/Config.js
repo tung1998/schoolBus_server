@@ -45,7 +45,7 @@ router.get('/', (req, res, next) => {
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let page = Number(req.params.page)
-  if (!page || page <= 0) res.status(404).send({ message: 'Page not found' })
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
     ConfigModel.getConfigs(db, page)

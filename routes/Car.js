@@ -47,7 +47,7 @@ router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
   let page = Number(req.params.page)
-  if (!page || page <= 0) res.status(404).send({ message: 'Page not found' })
+  if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
     CarModel.getCars(db, page, extra)
