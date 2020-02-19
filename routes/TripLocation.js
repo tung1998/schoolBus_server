@@ -158,7 +158,6 @@ router.get('/byTrip', (req, res, next) => {
   TripLocationModel.getTripLocationsByTrip(db, tripID)
     .then(TripLocations => res.send(TripLocations))
     .catch(next)
-
 })
 
 module.exports = router
