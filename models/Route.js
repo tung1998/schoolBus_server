@@ -131,20 +131,22 @@ function addExtra (db, docs, extra) {
     return Promise.all(arr)
       .then(() => {
         docs.forEach(({ requireCarStop, pickupCarStop, takeoffCarStop }) => {
-          if (Array.isArray(requireCarStop)) {
-            requireCarStop.forEach((c) => {
-              if (c.carStopID != null) c.carStop = carStops[c.carStopID]
-            })
-          }
-          if (Array.isArray(pickupCarStop)) {
-            pickupCarStop.forEach((c) => {
-              if (c.carStopID != null) c.carStop = carStops[c.carStopID]
-            })
-          }
-          if (Array.isArray(takeoffCarStop)) {
-            takeoffCarStop.forEach((c) => {
-              if (c.carStopID != null) c.carStop = carStops[c.carStopID]
-            })
+          if (carStops !== undefined) {
+            if (Array.isArray(requireCarStop)) {
+              requireCarStop.forEach((c) => {
+                if (c.carStopID != null) c.carStop = carStops[c.carStopID]
+              })
+            }
+            if (Array.isArray(pickupCarStop)) {
+              pickupCarStop.forEach((c) => {
+                if (c.carStopID != null) c.carStop = carStops[c.carStopID]
+              })
+            }
+            if (Array.isArray(takeoffCarStop)) {
+              takeoffCarStop.forEach((c) => {
+                if (c.carStopID != null) c.carStop = carStops[c.carStopID]
+              })
+            }
           }
         })
         return docs
