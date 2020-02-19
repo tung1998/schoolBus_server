@@ -153,9 +153,10 @@ router.get('/init', (req, res, next) => {
   data.forEach((item) => {
     ConfigModel.createConfig(db, item.name, item.value)
   })
-  res.send({success: true})
+  res.send({ success: true })
 })
 
-const data = []
+const data = [
+]
 
 module.exports = router
