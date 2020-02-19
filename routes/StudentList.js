@@ -28,8 +28,9 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let { extra } = req.query
   let result = {}
-  StudentListModel.getStudentLists(db, 1)
+  StudentListModel.getStudentLists(db, 1, extra)
     .then((data) => {
       result.data = data
       return StudentListModel.countStudentLists(db)
@@ -44,11 +45,12 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let { extra } = req.query
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Page not found' })
   else {
     let result = {}
-    StudentListModel.getStudentLists(db, page)
+    StudentListModel.getStudentLists(db, page, extra)
       .then((data) => {
         result.data = data
         return StudentListModel.countStudentLists(db)
@@ -65,7 +67,8 @@ router.get('/:page(\\d+)', (req, res, next) => {
 router.get('/:studentListID([0-9a-fA-F]{24})', (req, res, next) => {
   let { studentListID } = req.params
   let { db } = req.app.locals
-  StudentListModel.getStudentListByID(db, studentListID)
+  let { extra } = req.query
+  StudentListModel.getStudentListByID(db, studentListID, extra)
     .then((v) => {
       if (v === null) res.status(404).send({ message: 'Not Found' })
       else res.send(v)
@@ -145,6 +148,58 @@ router.get('/:studentListID([0-9a-fA-F]{24})/Log', (req, res, next) => {
   page = Number(page)
   LogModel.getLogsByObject(db, 'studentList', studentListID, sortBy, sortType, limit, page, extra)
     .then(v => res.send(v))
+    .catch(next)
+})
+
+router.put('/:studentListID([0-9a-fA-F]{24})/studentIDs/add', (req, res, next) => {
+  let { studentListID } = req.params
+  let { studentIDs } = req.body
+  let { db } = req.app.locals
+  StudentListModel.updateStudentListAddStudentIDs(db, studentListID, studentIDs)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update studentList add studentIDs : _id = ${studentListID}`,
+          Date.now(),
+          1,
+          req.body,
+          'studentList',
+          studentListID,
+        )
+      }
+    })
+    .catch(next)
+})
+
+router.put('/:studentListID([0-9a-fA-F]{24})/studentIDs/remove', (req, res, next) => {
+  let { studentListID } = req.params
+  let { studentIDs } = req.body
+  let { db } = req.app.locals
+  StudentListModel.updateStudentListRemoveStudentIDs(db, studentListID, studentIDs)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update studentList remove studentIDs : _id = ${studentListID}`,
+          Date.now(),
+          1,
+          req.body,
+          'studentList',
+          studentListID,
+        )
+      }
+    })
     .catch(next)
 })
 
