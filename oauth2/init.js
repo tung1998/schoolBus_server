@@ -4,6 +4,12 @@ const { loginByUsername } = require('./../models/User')
 
 const CANCEL_MESSAGE = 'Authentication is fail!'
 
+const USER_TYPE_ADMINISTRATOR = 0
+const USER_TYPE_STUDENT = 1
+const USER_TYPE_NANNY = 2
+const USER_TYPE_PARENT = 3
+const USER_TYPE_DRIVER = 4
+
 module.exports = initOAuth2
 
 /**
@@ -53,7 +59,6 @@ function tokenExtend (req) {
  * @returns {Object}
  */
 function initOAuth2 (db, app) {
-  app.set('name', 'oauth2 server')
   soas2.init({
     expressApp: app,
     authentication: authentication,
