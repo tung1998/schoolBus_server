@@ -5,9 +5,9 @@ const FeedbackModel = require('./../models/Feedback')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { userID, type, feedback, status, responseBy, responseTime, response } = req.body
+  let { userID, type, feedback } = req.body
   let { db } = req.app.locals
-  FeedbackModel.createFeedback(db, userID, type, feedback, status, responseBy, responseTime, response)
+  FeedbackModel.createFeedback(db, userID, type, feedback)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -78,17 +78,40 @@ router.get('/:feedbackID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:feedbackID([0-9a-fA-F]{24})', (req, res, next) => {
   let { feedbackID } = req.params
-  let { userID, type, feedback, status, responseBy, responseTime, response } = req.body
+  let { userID, type, feedback } = req.body
   let obj = {}
   if (userID !== undefined) obj.userID = userID
   if (type !== undefined) obj.type = type
   if (feedback !== undefined) obj.feedback = feedback
-  if (status !== undefined) obj.status = status
-  if (responseBy !== undefined) obj.responseBy = responseBy
-  if (responseTime !== undefined) obj.responseTime = responseTime
-  if (response !== undefined) obj.response = response
   let { db } = req.app.locals
   FeedbackModel.updateFeedback(db, feedbackID, obj)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update feedback : _id = ${feedbackID}`,
+          Date.now(),
+          1,
+          req.body,
+          'feedback',
+          feedbackID,
+        )
+      }
+    })
+    .catch(next)
+})
+
+router.put('/:feedbackID([0-9a-fA-F]{24})/response', (req, res, next) => {
+  let { feedbackID } = req.params
+  let { response } = req.body
+  let responseBy = req.token != null ? req.token.userID : null
+  let { db } = req.app.locals
+  FeedbackModel.updateFeedbackResponse(db, feedbackID, responseBy, response)
     .then(({ matchedCount }) => {
       if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
       else {
