@@ -73,4 +73,31 @@ function initOAuth2 (db, app) {
     routes: ['**'],
     method: ['get', 'post', 'put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => (
+    req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  )).defend({
+    routes: ['/Module/Log', '/Module/:moduleID([0-9a-fA-F]{24})/Log'],
+    methods: ['get'],
+  }).defend({
+    routes: ['/Module'],
+    methods: ['post'],
+  }).defend({
+    routes: ['/Module/:moduleID([0-9a-fA-F]{24})'],
+    methods: ['put'],
+  }).defend({
+    routes: ['/Module/:moduleID([0-9a-fA-F]{24})'],
+    methods: ['delete'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => (
+    req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  )).defend({
+    routes: ['/Log(/**)?'],
+    methods: ['get'],
+  })
 }
