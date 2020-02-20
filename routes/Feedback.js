@@ -121,7 +121,7 @@ router.put('/:feedbackID([0-9a-fA-F]{24})/response', (req, res, next) => {
           req.token ? req.token.userID : null,
           req.headers['user-agent'],
           req.ip,
-          `Update feedback : _id = ${feedbackID}`,
+          `Update feedback response : _id = ${feedbackID}`,
           Date.now(),
           1,
           req.body,
