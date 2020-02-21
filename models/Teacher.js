@@ -5,13 +5,15 @@ const { ObjectID } = require('mongodb')
  * @param {Object} db
  * @param {string} schoolID
  * @param {string} name
+ * @param {string} userID
  * @returns {Object}
  */
-function createTeacher (db, schoolID, name) {
+function createTeacher (db, schoolID, name, userID) {
   return db.collection(process.env.TEACHER_COLLECTION)
     .insertOne({
       schoolID,
       name,
+      userID,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -33,10 +35,10 @@ function countTeachers (db) {
  * Get teachers.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='school']
+ * @param {string} [extra='school,user']
  * @returns {Object}
  */
-function getTeachers (db, page, extra = 'school') {
+function getTeachers (db, page, extra = 'school,user') {
   return db.collection(process.env.TEACHER_COLLECTION)
     .find({ isDeleted: false })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -53,12 +55,29 @@ function getTeachers (db, page, extra = 'school') {
  * Get teacher by id.
  * @param {Object} db
  * @param {string} teacherID
- * @param {string} [extra='school']
+ * @param {string} [extra='school,user']
  * @returns {Object}
  */
-function getTeacherByID (db, teacherID, extra = 'school') {
+function getTeacherByID (db, teacherID, extra = 'school,user') {
   return db.collection(process.env.TEACHER_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(teacherID) })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get teacher by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {string} [extra='school,user']
+ * @returns {Object}
+ */
+function getTeacherByUser (db, userID, extra = 'school,user') {
+  return db.collection(process.env.TEACHER_COLLECTION)
+    .findOne({ isDeleted: false, userID })
     .then((v) => {
       if (v === null) return null
       if (!extra) return v
@@ -70,10 +89,10 @@ function getTeacherByID (db, teacherID, extra = 'school') {
  * Get teachers by ids.
  * @param {Object} db
  * @param {Array} teacherIDs
- * @param {string} [extra='school']
+ * @param {string} [extra='school,user']
  * @returns {Object}
  */
-function getTeachersByIDs (db, teacherIDs, extra = 'school') {
+function getTeachersByIDs (db, teacherIDs, extra = 'school,user') {
   return db.collection(process.env.TEACHER_COLLECTION)
     .find({ isDeleted: false, _id: { $in: teacherIDs } })
     .toArray()
@@ -89,10 +108,10 @@ function getTeachersByIDs (db, teacherIDs, extra = 'school') {
  * Get teachers by school.
  * @param {Object} db
  * @param {Array} schoolID
- * @param {string} [extra='school']
+ * @param {string} [extra='school,user']
  * @returns {Object}
  */
-function getTeachersBySchool (db, schoolID, extra = 'school') {
+function getTeachersBySchool (db, schoolID, extra = 'school,user') {
   return db.collection(process.env.TEACHER_COLLECTION)
     .find({ isDeleted: false, schoolID })
     .toArray()
@@ -114,12 +133,17 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let schoolIDs = []
-    docs.forEach(({ schoolID }) => {
+    let userIDs = []
+    docs.forEach(({ schoolID, userID }) => {
       if (e.includes('school') && schoolID != null) {
         schoolIDs.push(ObjectID(schoolID))
       }
+      if (e.includes('user') && userID != null) {
+        userIDs.push(ObjectID(userID))
+      }
     })
     let schools
+    let users
     let arr = []
     if (schoolIDs.length > 0) {
       let p = getSchoolsByIDs(db, schoolIDs)
@@ -128,24 +152,41 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (userIDs.length > 0) {
+      let p = getUsersByIDs(db, userIDs)
+        .then((v) => {
+          users = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { schoolID } = c
+          let { schoolID, userID } = c
           if (schools !== undefined && schoolID != null) {
             c.school = schools[schoolID]
+          }
+          if (users !== undefined && userID != null) {
+            c.user = users[userID]
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { schoolID } = doc
+  let { schoolID, userID } = doc
   let arr = []
   if (e.includes('school') && schoolID != null) {
     let p = getSchoolByID(db, schoolID)
       .then((v) => {
         doc.school = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('user') && userID != null) {
+    let p = getUserByID(db, userID)
+      .then((v) => {
+        doc.user = v
       })
     arr.push(p)
   }
@@ -175,9 +216,31 @@ function updateTeacher (db, teacherID, obj) {
  * @returns {Object}
  */
 function deleteTeacher (db, teacherID) {
+  let p = db.collection(process.env.TEACHER_COLLECTION)
+    .findAndModify(
+      { isDeleted: false, _id: ObjectID(teacherID) },
+      null,
+      { $set: { isDeleted: true } },
+      { fields: { _id: 0, userID: 1 } },
+    )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+      deleteUser(db, value.userID, false)
+    }
+  })
+  return p
+}
+
+/**
+ * Delete teacher by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function deleteTeacherByUser (db, userID) {
   return db.collection(process.env.TEACHER_COLLECTION)
     .updateOne(
-      { isDeleted: false, _id: ObjectID(teacherID) },
+      { isDeleted: false, userID },
       { $set: { isDeleted: true } },
     )
 }
@@ -187,10 +250,13 @@ module.exports = {
   countTeachers,
   getTeachers,
   getTeacherByID,
+  getTeacherByUser,
   getTeachersByIDs,
   getTeachersBySchool,
   updateTeacher,
   deleteTeacher,
+  deleteTeacherByUser,
 }
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
+const { getUsersByIDs, getUserByID, deleteUser } = require('./User')

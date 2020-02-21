@@ -5,9 +5,9 @@ const TeacherModel = require('./../models/Teacher')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { schoolID, name } = req.body
+  let { schoolID, name, userID } = req.body
   let { db } = req.app.locals
-  TeacherModel.createTeacher(db, schoolID, name)
+  TeacherModel.createTeacher(db, schoolID, name, userID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -108,8 +108,8 @@ router.delete('/:teacherID([0-9a-fA-F]{24})', (req, res, next) => {
   let { teacherID } = req.params
   let { db } = req.app.locals
   TeacherModel.deleteTeacher(db, teacherID)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(

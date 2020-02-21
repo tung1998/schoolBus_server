@@ -9,6 +9,7 @@ const USER_TYPE_STUDENT = 1
 const USER_TYPE_NANNY = 2
 const USER_TYPE_PARENT = 3
 const USER_TYPE_DRIVER = 4
+const USER_TYPE_TEACHER = 5
 
 module.exports = initOAuth2
 

@@ -6,6 +6,7 @@ const USER_TYPE_STUDENT = 1
 const USER_TYPE_NANNY = 2
 const USER_TYPE_PARENT = 3
 const USER_TYPE_DRIVER = 4
+const USER_TYPE_TEACHER = 5
 
 /**
  * Creats user.
@@ -140,6 +141,9 @@ function deleteUser (db, userID, deleteOption = true) {
             break
           case USER_TYPE_DRIVER:
             deleteDriverByUser(db, userID)
+            break
+          case USER_TYPE_TEACHER:
+            deleteTeacherByUser(db, userID)
             break
         }
       }
@@ -310,3 +314,4 @@ const { deleteStudentByUser } = require('./Student')
 const { deleteNannyByUser } = require('./Nanny')
 const { deleteParentByUser } = require('./Parent')
 const { deleteDriverByUser } = require('./Driver')
+const { deleteTeacherByUser } = require('./Teacher')
