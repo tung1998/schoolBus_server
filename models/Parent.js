@@ -1,21 +1,31 @@
 const { ObjectID } = require('mongodb')
 
+const USER_TYPE_PARENT = 3
+
 /**
  * Creats parent.
  * @param {Object} db
- * @param {string} userID
+ * @param {string} username
+ * @param {string} password
+ * @param {string} image
+ * @param {string} name
+ * @param {string} phone
+ * @param {string} email
  * @param {string} studentID
  * @returns {Object}
  */
-function createParent (db, userID, studentID) {
-  return db.collection(process.env.PARENT_COLLECTION)
-    .insertOne({
-      userID,
-      studentID,
-      createdTime: Date.now(),
-      updatedTime: Date.now(),
-      isDeleted: false,
-    })
+function createParent (db, username, password, image, name, phone, email, studentID) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_PARENT)
+    .then(({ insertedId }) => (
+      db.collection(process.env.PARENT_COLLECTION)
+        .insertOne({
+          userID: String(insertedId),
+          studentID,
+          createdTime: Date.now(),
+          updatedTime: Date.now(),
+          isDeleted: false,
+        })
+    ))
 }
 
 /**
@@ -237,5 +247,5 @@ module.exports = {
   deleteParentByUser,
 }
 
-const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
 const { getStudentsByIDs, getStudentByID } = require('./Student')

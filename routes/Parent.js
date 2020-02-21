@@ -5,9 +5,9 @@ const ParentModel = require('./../models/Parent')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { userID, studentID } = req.body
+  let { username, password, image, name, phone, email, studentID } = req.body
   let { db } = req.app.locals
-  ParentModel.createParent(db, userID, studentID)
+  ParentModel.createParent(db, username, password, image, name, phone, email, studentID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
