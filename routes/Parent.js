@@ -78,13 +78,18 @@ router.get('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { parentID } = req.params
-  let { studentID } = req.body
+  let { studentID, image, name, phone, email } = req.body
   let obj = {}
   if (studentID !== undefined) obj.studentID = studentID
+  let obj1 = {}
+  if (image !== undefined) obj1.image = image
+  if (name !== undefined) obj1.name = name
+  if (phone !== undefined) obj1.phone = phone
+  if (email !== undefined) obj1.email = email
   let { db } = req.app.locals
-  ParentModel.updateParent(db, parentID, obj)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+  ParentModel.updateParent(db, parentID, obj, obj1)
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(

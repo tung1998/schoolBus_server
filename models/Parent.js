@@ -189,14 +189,24 @@ function addExtra (db, docs, extra) {
  * @param {Object} db
  * @param {string} parentID
  * @param {Object} obj
+ * @param {Object} obj1
  * @returns {Object}
  */
-function updateParent (db, parentID, obj) {
+function updateParent (db, parentID, obj, obj1) {
   return db.collection(process.env.PARENT_COLLECTION)
-    .updateOne(
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(parentID) },
+      null,
       { $set: { updatedTime: Date.now(), ...obj } },
+      { fields: { _id: 0, userID: 1 } },
     )
+    .then((v) => {
+      if (v.lastErrorObject.updatedExisting) {
+        return updateUser(db, v.value.userID, obj1)
+          .then(() => v)
+      }
+      return v
+    })
 }
 
 /**
@@ -247,5 +257,5 @@ module.exports = {
   deleteParentByUser,
 }
 
-const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
 const { getStudentsByIDs, getStudentByID } = require('./Student')
