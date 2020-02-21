@@ -5,9 +5,9 @@ const DriverModel = require('./../models/Driver')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { userID, address, image, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status } = req.body
+  let { username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status } = req.body
   let { db } = req.app.locals
-  DriverModel.createDriver(db, userID, address, image, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status)
+  DriverModel.createDriver(db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -78,10 +78,9 @@ router.get('/:driverID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:driverID([0-9a-fA-F]{24})', (req, res, next) => {
   let { driverID } = req.params
-  let { address, image, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status } = req.body
+  let { address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status } = req.body
   let obj = {}
   if (address !== undefined) obj.address = address
-  if (image !== undefined) obj.image = image
   if (IDNumber !== undefined) obj.IDNumber = IDNumber
   if (IDIssueDate !== undefined) obj.IDIssueDate = IDIssueDate
   if (IDIssueBy !== undefined) obj.IDIssueBy = IDIssueBy

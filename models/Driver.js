@@ -1,11 +1,17 @@
 const { ObjectID } = require('mongodb')
 
+const USER_TYPE_DRIVER = 4
+
 /**
  * Creats driver.
  * @param {Object} db
- * @param {string} userID
- * @param {string} address
+ * @param {string} username
+ * @param {string} password
  * @param {string} image
+ * @param {string} name
+ * @param {string} phone
+ * @param {string} email
+ * @param {string} address
  * @param {string} IDNumber
  * @param {number} IDIssueDate
  * @param {string} IDIssueBy
@@ -14,22 +20,24 @@ const { ObjectID } = require('mongodb')
  * @param {number} status
  * @returns {Object}
  */
-function createDriver (db, userID, address, image, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status) {
-  return db.collection(process.env.DRIVER_COLLECTION)
-    .insertOne({
-      userID,
-      address,
-      image,
-      IDNumber,
-      IDIssueDate,
-      IDIssueBy,
-      DLNumber,
-      DLIssueDate,
-      status,
-      createdTime: Date.now(),
-      updatedTime: Date.now(),
-      isDeleted: false,
-    })
+function createDriver (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_DRIVER)
+    .then(({ insertedId }) => (
+      db.collection(process.env.DRIVER_COLLECTION)
+        .insertOne({
+          userID: String(insertedId),
+          address,
+          IDNumber,
+          IDIssueDate,
+          IDIssueBy,
+          DLNumber,
+          DLIssueDate,
+          status,
+          createdTime: Date.now(),
+          updatedTime: Date.now(),
+          isDeleted: false,
+        })
+    ))
 }
 
 /**
@@ -229,4 +237,4 @@ module.exports = {
   deleteDriverByUser,
 }
 
-const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
