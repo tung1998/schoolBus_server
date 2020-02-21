@@ -1,23 +1,31 @@
 const { ObjectID } = require('mongodb')
 
+const USER_TYPE_TEACHER = 5
+
 /**
  * Creats teacher.
  * @param {Object} db
- * @param {string} schoolID
+ * @param {string} username
+ * @param {string} password
+ * @param {string} image
  * @param {string} name
- * @param {string} userID
+ * @param {string} phone
+ * @param {string} email
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createTeacher (db, schoolID, name, userID) {
-  return db.collection(process.env.TEACHER_COLLECTION)
-    .insertOne({
-      schoolID,
-      name,
-      userID,
-      createdTime: Date.now(),
-      updatedTime: Date.now(),
-      isDeleted: false,
-    })
+function createTeacher (db, username, password, image, name, phone, email, schoolID) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_TEACHER)
+    .then(({ insertedId }) => (
+      db.collection(process.env.TEACHER_COLLECTION)
+        .insertOne({
+          schoolID,
+          userID: String(insertedId),
+          createdTime: Date.now(),
+          updatedTime: Date.now(),
+          isDeleted: false,
+        })
+    ))
 }
 
 /**
@@ -259,4 +267,4 @@ module.exports = {
 }
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
-const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
