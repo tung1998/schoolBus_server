@@ -78,7 +78,7 @@ router.get('/:driverID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:driverID([0-9a-fA-F]{24})', (req, res, next) => {
   let { driverID } = req.params
-  let { address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status } = req.body
+  let { address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status, image, name, phone, email } = req.body
   let obj = {}
   if (address !== undefined) obj.address = address
   if (IDNumber !== undefined) obj.IDNumber = IDNumber
@@ -87,10 +87,15 @@ router.put('/:driverID([0-9a-fA-F]{24})', (req, res, next) => {
   if (DLNumber !== undefined) obj.DLNumber = DLNumber
   if (DLIssueDate !== undefined) obj.DLIssueDate = DLIssueDate
   if (status !== undefined) obj.status = status
+  let obj1 = {}
+  if (image !== undefined) obj1.image = image
+  if (name !== undefined) obj1.name = name
+  if (phone !== undefined) obj1.phone = phone
+  if (email !== undefined) obj1.email = email
   let { db } = req.app.locals
-  DriverModel.updateDriver(db, driverID, obj)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+  DriverModel.updateDriver(db, driverID, obj, obj1)
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(

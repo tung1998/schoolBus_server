@@ -179,14 +179,24 @@ function addExtra (db, docs, extra) {
  * @param {Object} db
  * @param {string} driverID
  * @param {Object} obj
+ * @param {Object} obj1
  * @returns {Object}
  */
-function updateDriver (db, driverID, obj) {
+function updateDriver (db, driverID, obj, obj1) {
   return db.collection(process.env.DRIVER_COLLECTION)
-    .updateOne(
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(driverID) },
+      null,
       { $set: { updatedTime: Date.now(), ...obj } },
+      { fields: { _id: 0, userID: 1 } },
     )
+    .then((v) => {
+      if (v.lastErrorObject.updatedExisting) {
+        return updateUser(db, v.value.userID, obj1)
+          .then(() => v)
+      }
+      return v
+    })
 }
 
 /**
@@ -237,4 +247,4 @@ module.exports = {
   deleteDriverByUser,
 }
 
-const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
