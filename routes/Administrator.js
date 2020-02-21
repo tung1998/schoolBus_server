@@ -78,14 +78,19 @@ router.get('/:administratorID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:administratorID([0-9a-fA-F]{24})', (req, res, next) => {
   let { administratorID } = req.params
-  let { adminType, permission } = req.body
+  let { adminType, permission, image, name, phone, email } = req.body
   let obj = {}
   if (adminType !== undefined) obj.adminType = adminType
   if (permission !== undefined) obj.permission = permission
+  let obj1 = {}
+  if (image !== undefined) obj1.image = image
+  if (name !== undefined) obj1.name = name
+  if (phone !== undefined) obj1.phone = phone
+  if (email !== undefined) obj1.email = email
   let { db } = req.app.locals
-  AdministratorModel.updateAdministrator(db, administratorID, obj)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+  AdministratorModel.updateAdministrator(db, administratorID, obj, obj1)
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(
