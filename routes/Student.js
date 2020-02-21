@@ -78,16 +78,21 @@ router.get('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { studentID } = req.params
-  let { address, IDStudent, classID, status } = req.body
+  let { address, IDStudent, classID, status, image, name, phone, email } = req.body
   let obj = {}
   if (address !== undefined) obj.address = address
   if (IDStudent !== undefined) obj.IDStudent = IDStudent
   if (classID !== undefined) obj.classID = classID
   if (status !== undefined) obj.status = status
+  let obj1 = {}
+  if (image !== undefined) obj1.image = image
+  if (name !== undefined) obj1.name = name
+  if (phone !== undefined) obj1.phone = phone
+  if (email !== undefined) obj1.email = email
   let { db } = req.app.locals
-  StudentModel.updateStudent(db, studentID, obj)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+  StudentModel.updateStudent(db, studentID, obj, obj1)
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(
