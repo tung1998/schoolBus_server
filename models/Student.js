@@ -1,29 +1,37 @@
 const { ObjectID } = require('mongodb')
 
+const USER_TYPE_STUDENT = 1
+
 /**
  * Creats student.
  * @param {Object} db
- * @param {string} userID
+ * @param {string} username
+ * @param {string} password
+ * @param {string} image
+ * @param {string} name
+ * @param {string} phone
+ * @param {string} email
  * @param {string} address
  * @param {string} IDStudent
- * @param {string} name
  * @param {string} classID
  * @param {number} status
  * @returns {Object}
  */
-function createStudent (db, userID, address, IDStudent, name, classID, status) {
-  return db.collection(process.env.STUDENT_COLLECTION)
-    .insertOne({
-      userID,
-      address,
-      IDStudent,
-      name,
-      classID,
-      status,
-      createdTime: Date.now(),
-      updatedTime: Date.now(),
-      isDeleted: false,
-    })
+function createStudent (db, username, password, image, name, phone, email, address, IDStudent, classID, status) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_STUDENT)
+    .then(({ insertedId }) => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .insertOne({
+          userID: String(insertedId),
+          address,
+          IDStudent,
+          classID,
+          status,
+          createdTime: Date.now(),
+          updatedTime: Date.now(),
+          isDeleted: false,
+        })
+    ))
 }
 
 /**
@@ -264,5 +272,5 @@ module.exports = {
   deleteStudentByUser,
 }
 
-const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
 const { getClassesByIDs, getClassByID } = require('./Class')

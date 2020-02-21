@@ -5,9 +5,9 @@ const StudentModel = require('./../models/Student')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { userID, address, IDStudent, name, classID, status } = req.body
+  let { username, password, image, name, phone, email, address, IDStudent, classID, status } = req.body
   let { db } = req.app.locals
-  StudentModel.createStudent(db, userID, address, IDStudent, name, classID, status)
+  StudentModel.createStudent(db, username, password, image, name, phone, email, address, IDStudent, classID, status)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -78,11 +78,10 @@ router.get('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { studentID } = req.params
-  let { address, IDStudent, name, classID, status } = req.body
+  let { address, IDStudent, classID, status } = req.body
   let obj = {}
   if (address !== undefined) obj.address = address
   if (IDStudent !== undefined) obj.IDStudent = IDStudent
-  if (name !== undefined) obj.name = name
   if (classID !== undefined) obj.classID = classID
   if (status !== undefined) obj.status = status
   let { db } = req.app.locals
