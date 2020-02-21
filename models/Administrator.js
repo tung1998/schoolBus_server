@@ -1,23 +1,33 @@
 const { ObjectID } = require('mongodb')
 
+const USER_TYPE_ADMINISTRATOR = 0
+
 /**
  * Creats administrator.
  * @param {Object} db
- * @param {string} userID
+ * @param {string} username
+ * @param {string} password
+ * @param {string} image
+ * @param {string} name
+ * @param {string} phone
+ * @param {string} email
  * @param {number} adminType
  * @param {string} permission
  * @returns {Object}
  */
-function createAdministrator (db, userID, adminType, permission) {
-  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
-    .insertOne({
-      userID,
-      adminType,
-      permission,
-      createdTime: Date.now(),
-      updatedTime: Date.now(),
-      isDeleted: false,
-    })
+function createAdministrator (db, username, password, image, name, phone, email, adminType, permission) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_ADMINISTRATOR)
+    .then(({ insertedId }) => (
+      db.collection(process.env.ADMINISTRATOR_COLLECTION)
+        .insertOne({
+          userID: String(insertedId),
+          adminType,
+          permission,
+          createdTime: Date.now(),
+          updatedTime: Date.now(),
+          isDeleted: false,
+        })
+    ))
 }
 
 /**
@@ -217,4 +227,4 @@ module.exports = {
   deleteAdministratorByUser,
 }
 
-const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')

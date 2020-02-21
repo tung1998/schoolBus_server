@@ -5,9 +5,9 @@ const AdministratorModel = require('./../models/Administrator')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { userID, adminType, permission } = req.body
+  let { username, password, image, name, phone, email, adminType, permission } = req.body
   let { db } = req.app.locals
-  AdministratorModel.createAdministrator(db, userID, adminType, permission)
+  AdministratorModel.createAdministrator(db, username, password, image, name, phone, email, adminType, permission)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
