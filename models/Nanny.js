@@ -1,31 +1,39 @@
 const { ObjectID } = require('mongodb')
 
+const USER_TYPE_NANNY = 2
+
 /**
  * Creats nanny.
  * @param {Object} db
- * @param {string} userID
- * @param {string} address
+ * @param {string} username
+ * @param {string} password
  * @param {string} image
+ * @param {string} name
+ * @param {string} phone
+ * @param {string} email
+ * @param {string} address
  * @param {string} IDNumber
  * @param {number} IDIssueDate
  * @param {string} IDIssueBy
  * @param {number} status
  * @returns {Object}
  */
-function createNanny (db, userID, address, image, IDNumber, IDIssueDate, IDIssueBy, status) {
-  return db.collection(process.env.NANNY_COLLECTION)
-    .insertOne({
-      userID,
-      address,
-      image,
-      IDNumber,
-      IDIssueDate,
-      IDIssueBy,
-      status,
-      createdTime: Date.now(),
-      updatedTime: Date.now(),
-      isDeleted: false,
-    })
+function createNanny (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_NANNY)
+    .then(({ insertedId }) => (
+      db.collection(process.env.NANNY_COLLECTION)
+        .insertOne({
+          userID: String(insertedId),
+          address,
+          IDNumber,
+          IDIssueDate,
+          IDIssueBy,
+          status,
+          createdTime: Date.now(),
+          updatedTime: Date.now(),
+          isDeleted: false,
+        })
+    ))
 }
 
 /**
@@ -225,4 +233,4 @@ module.exports = {
   deleteNannyByUser,
 }
 
-const { getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
