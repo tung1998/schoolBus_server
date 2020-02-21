@@ -78,17 +78,22 @@ router.get('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
   let { nannyID } = req.params
-  let { address, IDNumber, IDIssueDate, IDIssueBy, status } = req.body
+  let { address, IDNumber, IDIssueDate, IDIssueBy, status, image, name, phone, email } = req.body
   let obj = {}
   if (address !== undefined) obj.address = address
   if (IDNumber !== undefined) obj.IDNumber = IDNumber
   if (IDIssueDate !== undefined) obj.IDIssueDate = IDIssueDate
   if (IDIssueBy !== undefined) obj.IDIssueBy = IDIssueBy
   if (status !== undefined) obj.status = status
+  let obj1 = {}
+  if (image !== undefined) obj1.image = image
+  if (name !== undefined) obj1.name = name
+  if (phone !== undefined) obj1.phone = phone
+  if (email !== undefined) obj1.email = email
   let { db } = req.app.locals
-  NannyModel.updateNanny(db, nannyID, obj)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+  NannyModel.updateNanny(db, nannyID, obj, obj1)
+    .then(({ lastErrorObject: { updatedExisting } }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
       else {
         res.send()
         return LogModel.createLog(

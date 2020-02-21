@@ -175,14 +175,24 @@ function addExtra (db, docs, extra) {
  * @param {Object} db
  * @param {string} nannyID
  * @param {Object} obj
+ * @param {Object} obj1
  * @returns {Object}
  */
-function updateNanny (db, nannyID, obj) {
+function updateNanny (db, nannyID, obj, obj1) {
   return db.collection(process.env.NANNY_COLLECTION)
-    .updateOne(
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(nannyID) },
+      null,
       { $set: { updatedTime: Date.now(), ...obj } },
+      { fields: { _id: 0, userID: 1 } },
     )
+    .then((v) => {
+      if (v.lastErrorObject.updatedExisting) {
+        return updateUser(db, v.value.userID, obj1)
+          .then(() => v)
+      }
+      return v
+    })
 }
 
 /**
@@ -233,4 +243,4 @@ module.exports = {
   deleteNannyByUser,
 }
 
-const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
