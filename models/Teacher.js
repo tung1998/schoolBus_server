@@ -207,14 +207,24 @@ function addExtra (db, docs, extra) {
  * @param {Object} db
  * @param {string} teacherID
  * @param {Object} obj
+ * @param {Object} obj1
  * @returns {Object}
  */
-function updateTeacher (db, teacherID, obj) {
+function updateTeacher (db, teacherID, obj, obj1) {
   return db.collection(process.env.TEACHER_COLLECTION)
-    .updateOne(
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(teacherID) },
+      null,
       { $set: { updatedTime: Date.now(), ...obj } },
+      { fields: { _id: 0, userID: 1 } },
     )
+    .then((v) => {
+      if (v.lastErrorObject.updatedExisting) {
+        return updateUser(db, v.value.userID, obj1)
+          .then(() => v)
+      }
+      return v
+    })
 }
 
 /**
@@ -267,4 +277,4 @@ module.exports = {
 }
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
-const { createUser, getUsersByIDs, getUserByID, deleteUser } = require('./User')
+const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
