@@ -270,9 +270,9 @@ function deleteStudentByUser (db, userID) {
       { $set: { isDeleted: true } },
       { fields: { _id: 1 } },
     )
-    .then(() => {
+    .then(({ lastErrorObject: { updatedExisting }, value }) => {
       if (updatedExisting) {
-        deleteStudentTrips(db, 'studentID', studentID)
+        deleteStudentTrips(db, 'studentID', String(value._id))
       }
     })
 }
