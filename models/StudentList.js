@@ -180,6 +180,20 @@ function updateStudentListRemoveStudentIDs (db, studentListID, studentIDs) {
 }
 
 /**
+ * Update studentLists remove studentIDs.
+ * @param {Object} db
+ * @param {(Array|string)} studentIDs
+ * @returns {Object}
+ */
+function updateStudentListsRemoveStudentIDs (db, studentIDs) {
+  return db.collection(process.env.STUDENT_LIST_COLLECTION)
+    .updateMany(
+      { isDeleted: false },
+      { $set: { updatedTime: Date.now() }, $pullAll: { studentIDs: Array.isArray(studentIDs) ? studentIDs : [studentIDs] } },
+    )
+}
+
+/**
  * Delete studentList.
  * @param {Object} db
  * @param {string} studentListID
@@ -202,6 +216,7 @@ module.exports = {
   updateStudentList,
   updateStudentListAddStudentIDs,
   updateStudentListRemoveStudentIDs,
+  updateStudentListsRemoveStudentIDs,
   deleteStudentList,
 }
 
