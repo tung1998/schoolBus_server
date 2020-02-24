@@ -273,4 +273,15 @@ router.get('/byEmail', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/byAccessToken', (req, res, next) => {
+  let { access_token: accessToken } = req.query
+  let { db } = req.app.locals
+  UserModel.getUserByAccessToken(db, accessToken)
+    .then((v) => {
+      if (v === null) res.status(404).send({ message: 'Not Found' })
+      else res.send(v)
+    })
+    .catch(next)
+})
+
 module.exports = router

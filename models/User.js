@@ -246,10 +246,10 @@ function unblockUser (db, userID) {
  * Delete tokens by user.
  * @param {Object} db
  * @param {string} userID
- * @returns {undefined}
+ * @returns {Object}
  */
 function deleteTokensByUser (db, userID) {
-  db.collection(process.env.OAUTH2_TOKEN_COLLECTION).deleteMany({ userID })
+  return db.collection(process.env.OAUTH2_TOKEN_COLLECTION).deleteMany({ userID })
 }
 
 /**
@@ -293,6 +293,21 @@ function getUserByEmail (db, email) {
   return db.collection(process.env.USER_COLLECTION).findOne({ isDeleted: false, email })
 }
 
+/**
+ * Get user by accessToken.
+ * @param {Object} db
+ * @param {string} accessToken
+ * @returns {Object}
+ */
+function getUserByAccessToken (db, accessToken) {
+  return db.collection(process.env.OAUTH2_TOKEN_COLLECTION)
+    .findOne({ access_token: accessToken }, { fields: { _id: 0, userID: 1 } })
+    .then((v) => {
+      if (v === null) return null
+      return getUserByID(db, v.userID)
+    })
+}
+
 module.exports = {
   createUser,
   countUsers,
@@ -307,6 +322,7 @@ module.exports = {
   updateUserPassword,
   getUserByPhone,
   getUserByEmail,
+  getUserByAccessToken,
 }
 
 const { deleteAdministratorByUser } = require('./Administrator')
