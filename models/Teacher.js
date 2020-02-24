@@ -263,6 +263,24 @@ function deleteTeacherByUser (db, userID) {
     )
 }
 
+/**
+ * Delete teachers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function deleteTeachersBySchool (db, schoolID) {
+  return db.collection(process.env.TEACHER_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteTeacher(db, _id)
+      })
+    })
+}
+
 module.exports = {
   createTeacher,
   countTeachers,
@@ -274,6 +292,7 @@ module.exports = {
   updateTeacher,
   deleteTeacher,
   deleteTeacherByUser,
+  deleteTeachersBySchool,
 }
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
