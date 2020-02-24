@@ -250,6 +250,7 @@ function deleteStudent (db, studentID) {
   p.then(({ lastErrorObject: { updatedExisting }, value }) => {
     if (updatedExisting) {
       deleteUser(db, value.userID, false)
+      deleteStudentTrips(db, 'studentID', studentID)
     }
   })
   return p
@@ -263,10 +264,17 @@ function deleteStudent (db, studentID) {
  */
 function deleteStudentByUser (db, userID) {
   return db.collection(process.env.STUDENT_COLLECTION)
-    .updateOne(
+    .findAndModify(
       { isDeleted: false, userID },
+      null,
       { $set: { isDeleted: true } },
+      { fields: { _id: 1 } },
     )
+    .then(() => {
+      if (updatedExisting) {
+        deleteStudentTrips(db, 'studentID', studentID)
+      }
+    })
 }
 
 /**
@@ -303,3 +311,4 @@ module.exports = {
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
 const { getClassesByIDs, getClassByID } = require('./Class')
+const { deleteStudentTrips } = require('./StudentTrip')

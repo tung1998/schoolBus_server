@@ -243,6 +243,21 @@ function deleteStudentTrip (db, studentTripID) {
     )
 }
 
+/**
+ * Delete studentTrips.
+ * @param {Object} db
+ * @param {string} key
+ * @param {(string|Array)} value
+ * @returns {Object}
+ */
+function deleteStudentTrips (db, key, value) {
+  return db.collection(process.env.STUDENT_TRIP_COLLECTION)
+    .updateMany(
+      { isDeleted: false, [key]: Array.isArray(value) ? { $in: value } : value },
+      { $set: { isDeleted: true } },
+    )
+}
+
 module.exports = {
   createStudentTrip,
   countStudentTrips,
@@ -254,6 +269,7 @@ module.exports = {
   updateStudentTrip,
   updateStudentTripStatus,
   deleteStudentTrip,
+  deleteStudentTrips,
 }
 
 const { getTripsByIDs, getTripByID } = require('./Trip')
