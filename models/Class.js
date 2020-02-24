@@ -219,7 +219,7 @@ function deleteClassesBySchool (db, schoolID) {
     .toArray()
     .then((v) => {
       v.forEach(({ _id }) => {
-        deleteClass(db, _id)
+        deleteClass(db, String(_id))
       })
     })
 }

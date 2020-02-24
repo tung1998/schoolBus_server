@@ -276,7 +276,7 @@ function deleteTeachersBySchool (db, schoolID) {
     .toArray()
     .then((v) => {
       v.forEach(({ _id }) => {
-        deleteTeacher(db, _id)
+        deleteTeacher(db, String(_id))
       })
     })
 }
