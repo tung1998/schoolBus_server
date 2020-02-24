@@ -284,4 +284,12 @@ router.get('/byAccessToken', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/current', (req, res, next) => {
+  let { db } = req.app.locals
+  let { userID } = req.token
+  UserModel.getUserByID(db, userID)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router
