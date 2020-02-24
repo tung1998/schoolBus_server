@@ -199,11 +199,17 @@ function updateClass (db, classID, obj) {
  * @returns {Object}
  */
 function deleteClass (db, classID) {
-  return db.collection(process.env.CLASS_COLLECTION)
+  let p = db.collection(process.env.CLASS_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(classID) },
       { $set: { isDeleted: true } },
     )
+  p.then(({ matchedCount }) => {
+    if (matchedCount === 1) {
+      deleteStudentsByClass(db, classID)
+    }
+  })
+  return p
 }
 
 /**
@@ -238,3 +244,4 @@ module.exports = {
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { getTeachersByIDs, getTeacherByID } = require('./Teacher')
+const { deleteStudentsByClass } = require('./Student')

@@ -269,6 +269,24 @@ function deleteStudentByUser (db, userID) {
     )
 }
 
+/**
+ * Delete students by class.
+ * @param {Object} db
+ * @param {string} classID
+ * @returns {Object}
+ */
+function deleteStudentsByClass (db, classID) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, classID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteStudent(db, String(_id))
+      })
+    })
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -280,6 +298,7 @@ module.exports = {
   updateStudent,
   deleteStudent,
   deleteStudentByUser,
+  deleteStudentsByClass,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
