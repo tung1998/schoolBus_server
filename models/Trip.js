@@ -406,11 +406,17 @@ function updateTripStatus (db, tripID, status) {
  * @returns {Object}
  */
 function deleteTrip (db, tripID) {
-  return db.collection(process.env.TRIP_COLLECTION)
+  let p = db.collection(process.env.TRIP_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(tripID) },
       { $set: { isDeleted: true } },
     )
+  p.then(({ matchedCount }) => {
+    if (matchedCount === 1) {
+      deleteStudentTrips(db, 'tripID', tripID)
+    }
+  })
+  return p
 }
 
 module.exports = {
@@ -433,3 +439,4 @@ const { getDriversByIDs, getDriverByID } = require('./Driver')
 const { getNanniesByIDs, getNannyByID } = require('./Nanny')
 const { getRoutesByIDs, getRouteByID } = require('./Route')
 const { getStudentListsByIDs, getStudentListByID } = require('./StudentList')
+const { deleteStudentTrips } = require('./StudentTrip')
