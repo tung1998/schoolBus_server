@@ -99,11 +99,17 @@ function updateCarModel (db, carModelID, obj) {
  * @returns {Object}
  */
 function deleteCarModel (db, carModelID) {
-  return db.collection(process.env.CAR_MODEL_COLLECTION)
+  let p = db.collection(process.env.CAR_MODEL_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(carModelID) },
       { $set: { isDeleted: true } },
     )
+  p.then(({ matchedCount }) => {
+    if (matchedCount === 1) {
+      deleteCarsByCarModel(db, carModelID)
+    }
+  })
+  return p
 }
 
 module.exports = {
@@ -115,3 +121,5 @@ module.exports = {
   updateCarModel,
   deleteCarModel,
 }
+
+const { deleteCarsByCarModel } = require('./Car')

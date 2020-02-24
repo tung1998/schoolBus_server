@@ -164,6 +164,24 @@ function deleteCar (db, carID) {
     )
 }
 
+/**
+ * Delete cars by carModel.
+ * @param {Object} db
+ * @param {string} carModelID
+ * @returns {Object}
+ */
+function deleteCarsByCarModel (db, carModelID) {
+  return db.collection(process.env.CAR_COLLECTION)
+    .find({ isDeleted: false, carModelID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteCar(db, String(_id))
+      })
+    })
+}
+
 module.exports = {
   createCar,
   countCars,
@@ -172,6 +190,7 @@ module.exports = {
   getCarsByIDs,
   updateCar,
   deleteCar,
+  deleteCarsByCarModel,
 }
 
 const { getCarModelsByIDs, getCarModelByID } = require('./CarModel')
