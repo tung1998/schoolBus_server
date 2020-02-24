@@ -91,11 +91,17 @@ function updateSchool (db, schoolID, obj) {
  * @returns {Object}
  */
 function deleteSchool (db, schoolID) {
-  return db.collection(process.env.SCHOOL_COLLECTION)
+  let p = db.collection(process.env.SCHOOL_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(schoolID) },
       { $set: { isDeleted: true } },
     )
+  p.then(({ matchedCount }) => {
+    if (matchedCount === 1) {
+      deleteClassesBySchool(db, schoolID)
+    }
+  })
+  return p
 }
 
 module.exports = {
@@ -107,3 +113,5 @@ module.exports = {
   updateSchool,
   deleteSchool,
 }
+
+const { deleteClassesBySchool } = require('./Class')

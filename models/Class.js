@@ -214,10 +214,14 @@ function deleteClass (db, classID) {
  */
 function deleteClassesBySchool (db, schoolID) {
   return db.collection(process.env.CLASS_COLLECTION)
-    .updateMany(
-      { isDeleted: false, schoolID },
-      { $set: { isDeleted: true } },
-    )
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteClass(db, _id)
+      })
+    })
 }
 
 module.exports = {
