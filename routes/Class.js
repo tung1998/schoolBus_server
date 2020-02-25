@@ -151,4 +151,12 @@ router.get('/:classID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/bySchool', (req, res, next) => {
+  let { db } = req.app.locals
+  let { schoolID, extra } = req.query
+  ClassModel.getClassesBySchool(db, schoolID, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router
