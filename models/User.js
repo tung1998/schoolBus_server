@@ -12,7 +12,7 @@ const USER_TYPE_TEACHER = 5
  * Creats user.
  * @param {Object} db
  * @param {string} username
- * @param {string} password='12345678'
+ * @param {string} [password='12345678']
  * @param {string} image
  * @param {string} name
  * @param {string} phone
@@ -253,7 +253,7 @@ function deleteTokensByUser (db, userID) {
 }
 
 /**
- * Update user password
+ * Update user password.
  * @param {Object} db
  * @param {string} userID
  * @param {string} password
