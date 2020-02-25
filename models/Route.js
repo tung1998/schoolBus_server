@@ -7,15 +7,21 @@ const { ObjectID } = require('mongodb')
  * @param {Array} pickupCarStop
  * @param {Array} takeoffCarStop
  * @param {number} toll
+ * @param {string} carID
+ * @param {string} driverID
+ * @param {string} nannyID
  * @returns {Object}
  */
-function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll) {
+function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID) {
   return db.collection(process.env.ROUTE_COLLECTION)
     .insertOne({
       requireCarStop,
       pickupCarStop,
       takeoffCarStop,
       toll,
+      carID,
+      driverID,
+      nannyID,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -37,10 +43,10 @@ function countRoutes (db) {
  * Get routes.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='carStop']
+ * @param {string} [extra='carStop,car,driver,nanny']
  * @returns {Object}
  */
-function getRoutes (db, page, extra = 'carStop') {
+function getRoutes (db, page, extra = 'carStop,car,driver,nanny') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .find({ isDeleted: false })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -57,10 +63,10 @@ function getRoutes (db, page, extra = 'carStop') {
  * Get route by id.
  * @param {Object} db
  * @param {string} routeID
- * @param {string} [extra='carStop']
+ * @param {string} [extra='carStop,car,driver,nanny']
  * @returns {Object}
  */
-function getRouteByID (db, routeID, extra = 'carStop') {
+function getRouteByID (db, routeID, extra = 'carStop,car,driver,nanny') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(routeID) })
     .then((v) => {
@@ -74,10 +80,10 @@ function getRouteByID (db, routeID, extra = 'carStop') {
  * Get routes by ids.
  * @param {Object} db
  * @param {Array} routeIDs
- * @param {string} [extra='carStop']
+ * @param {string} [extra='carStop,car,driver,nanny']
  * @returns {Object}
  */
-function getRoutesByIDs (db, routeIDs, extra = 'carStop') {
+function getRoutesByIDs (db, routeIDs, extra = 'carStop,car,driver,nanny') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .find({ isDeleted: false, _id: { $in: routeIDs } })
     .toArray()
@@ -100,7 +106,10 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let carStopIDs = []
-    docs.forEach(({ requireCarStop, pickupCarStop, takeoffCarStop }) => {
+    let carIDs = []
+    let driverIDs = []
+    let nannyIDs = []
+    docs.forEach(({ requireCarStop, pickupCarStop, takeoffCarStop, carID, driverID, nannyID }) => {
       if (e.includes('carStop')) {
         if (Array.isArray(requireCarStop)) {
           requireCarStop.forEach(({ carStopID }) => {
@@ -118,8 +127,20 @@ function addExtra (db, docs, extra) {
           })
         }
       }
+      if (e.includes('car') && carID != null) {
+        carIDs.push(ObjectID(carID))
+      }
+      if (e.includes('driver') && driverID != null) {
+        driverIDs.push(ObjectID(driverID))
+      }
+      if (e.includes('nanny') && nannyID != null) {
+        nannyIDs.push(ObjectID(nannyID))
+      }
     })
     let carStops
+    let cars
+    let drivers
+    let nannies
     let arr = []
     if (carStopIDs.length > 0) {
       let p = getCarStopsByIDs(db, carStopIDs)
@@ -128,9 +149,31 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (carIDs.length > 0) {
+      let p = getCarsByIDs(db, carIDs)
+        .then((v) => {
+          cars = v
+        })
+      arr.push(p)
+    }
+    if (driverIDs.length > 0) {
+      let p = getDriversByIDs(db, driverIDs)
+        .then((v) => {
+          drivers = v
+        })
+      arr.push(p)
+    }
+    if (nannyIDs.length > 0) {
+      let p = getNanniesByIDs(db, nannyIDs)
+        .then((v) => {
+          nannies = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
-        docs.forEach(({ requireCarStop, pickupCarStop, takeoffCarStop }) => {
+        docs.forEach((c) => {
+          let { requireCarStop, pickupCarStop, takeoffCarStop, carID, driverID, nannyID } = c
           if (carStops !== undefined) {
             if (Array.isArray(requireCarStop)) {
               requireCarStop.forEach((c) => {
@@ -148,12 +191,21 @@ function addExtra (db, docs, extra) {
               })
             }
           }
+          if (cars !== undefined && carID != null) {
+            c.car = cars[carID]
+          }
+          if (drivers !== undefined && driverID != null) {
+            c.driver = drivers[driverID]
+          }
+          if (nannies !== undefined && nannyID != null) {
+            c.nanny = nannies[nannyID]
+          }
         })
         return docs
       })
   }
   let doc = docs
-  let { requireCarStop, pickupCarStop, takeoffCarStop } = doc
+  let { requireCarStop, pickupCarStop, takeoffCarStop, carID, driverID, nannyID } = doc
   let arr = []
   if (e.includes('carStop')) {
     let carStopIDs = []
@@ -193,6 +245,27 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+  }
+  if (e.includes('car') && carID != null) {
+    let p = getCarByID(db, carID)
+      .then((v) => {
+        doc.car = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('driver') && driverID != null) {
+    let p = getDriverByID(db, driverID)
+      .then((v) => {
+        doc.driver = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('nanny') && nannyID != null) {
+    let p = getNannyByID(db, nannyID)
+      .then((v) => {
+        doc.nanny = v
+      })
+    arr.push(p)
   }
   return Promise.all(arr)
     .then(() => doc)
@@ -238,3 +311,6 @@ module.exports = {
 }
 
 const { getCarStopsByIDs } = require('./CarStop')
+const { getCarsByIDs, getCarByID } = require('./Car')
+const { getDriversByIDs, getDriverByID } = require('./Driver')
+const { getNanniesByIDs, getNannyByID } = require('./Nanny')
