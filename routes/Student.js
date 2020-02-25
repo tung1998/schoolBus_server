@@ -5,9 +5,9 @@ const StudentModel = require('./../models/Student')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, address, IDStudent, classID, status } = req.body
+  let { username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID } = req.body
   let { db } = req.app.locals
-  StudentModel.createStudent(db, username, password, image, name, phone, email, address, IDStudent, classID, status)
+  StudentModel.createStudent(db, username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
