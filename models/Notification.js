@@ -109,12 +109,12 @@ function getNotificationsByIDs (db, notificationIDs, extra = 'user') {
 }
 
 /**
- * Hàm lấy tất cả Notification theo User theo page
+ * Hàm lấy tất cả Notification theo User theo page.
  * @param {Object} db
- * @param {String} userID
- * @param {Number} page
- * @param {Sring} extra
- * @return {Object}
+ * @param {string} userID
+ * @param {number} page
+ * @param {string} extra
+ * @returns {Object}
  */
 function getNotificationsByUser (db, userID, page = 1, extra = 'user') {
   return db.collection(process.env.NOTIFICATION_COLLECTION)
@@ -131,12 +131,12 @@ function getNotificationsByUser (db, userID, page = 1, extra = 'user') {
 }
 
 /**
- * Hàm lấy tất cả Notification chưa đọc của User theo page
+ * Hàm lấy tất cả Notification chưa đọc của User theo page.
  * @param {Object} db
- * @param {String} userID
- * @param {Number} page
- * @param {String} extra
- * @return {Object}
+ * @param {string} userID
+ * @param {number} page
+ * @param {string} extra
+ * @returns {Object}
  */
 function getUnreadNotificationsByUser (db, userID, page = 1, extra = 'user') {
   return db.collection(process.env.NOTIFICATION_COLLECTION)
@@ -217,10 +217,11 @@ function updateNotification (db, notificationID, obj) {
 }
 
 /**
- * Cập nhật trạng thái Notification
+ * Cập nhật trạng thái Notification.
  * @param {Object} db
- * @param {String} notificationID
- * @param {Number} status
+ * @param {string} notificationID
+ * @param {number} status
+ * @returns {Object}
  */
 function updateNotificationStatus (db, notificationID, status) {
   return db.collection(process.env.NOTIFICATION_COLLECTION)
@@ -245,7 +246,7 @@ function deleteNotification (db, notificationID) {
 }
 
 /**
- * Filter notifications
+ * Filter notifications.
  * @param {Object} db
  * @param {string} userID
  * @param {string} sortBy

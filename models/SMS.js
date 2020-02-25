@@ -9,7 +9,7 @@ const SMS_STATUS_SENT = 1
  * @param {string} userID
  * @param {string} phoneNumber
  * @param {string} content
- * @param {number} status=SMS_STATUS_CREATED
+ * @param {number} [status=SMS_STATUS_CREATED]
  * @param {number} price
  * @returns {Object}
  */
@@ -135,15 +135,15 @@ function getSMSByIDs (db, SMSIDs, extra = 'user') {
 }
 
 /**
- * Trả về tất cả SMS của User theo page
+ * Get SMS by user.
  * @param {Object} db
- * @param {String} userID
- * @param {Integer} page
- * @return {Object}
+ * @param {string} userID
+ * @param {number} [page=1]
+ * @returns {Object}
  */
 function getSMSByUser (db, userID, page = 1) {
   return db.collection(process.env.SMS_COLLECTION)
-    .find({ userID, isDeleted: false })
+    .find({ isDeleted: false, userID })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
     .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
@@ -215,10 +215,11 @@ function updateSMS (db, SMSID, obj) {
 }
 
 /**
- * Cập nhật trạng thái SMS
+ * Cập nhật trạng thái SMS.
  * @param {Object} db
- * @param {String} smsID
- * @param {String} SMSStatus
+ * @param {string} smsID
+ * @param {string} SMSStatus
+ * @returns {Object}
  */
 function updateSMSStatus (db, smsID, SMSStatus) {
   return db.collection(process.env.SMS_COLLECTION)
