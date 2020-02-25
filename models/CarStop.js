@@ -128,7 +128,7 @@ function getCarStopsBySearch (db, name, address, extra = true) {
   })
 }
 
-/** Get carStops by type in route
+/** Get carStops by type in route.
  * @param {string} type
  * @param {Object} db
  * @param {string} routeID
@@ -148,7 +148,7 @@ function getCarStopsByTypeInRoute (type, db, routeID) {
 }
 
 /**
- * Get pickup carStops
+ * Get pickup carStops.
  * @param {Object} db
  * @param {string} routeID
  * @returns {Promise}
@@ -181,7 +181,7 @@ function getPickupCarStops (db, routeID) {
 }
 
 /**
- * Get takeoff carStops
+ * Get takeoff carStops.
  * @param {Object} db
  * @param {string} routeID
  * @returns {Promise}
@@ -214,7 +214,7 @@ function getTakeoffCarStops (db, routeID) {
 }
 
 /**
- * Get pickup carStops
+ * Get pickup carStops.
  * @param {Object} db
  * @param {string} routeID
  * @returns {Promise}

@@ -107,7 +107,7 @@ function getLogsByIDs (db, logIDs, extra = 'user') {
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} extra='user'
+ * @param {string} [extra='user']
  * @param {number} start
  * @param {number} finish
  * @param {number} type
@@ -152,7 +152,7 @@ function getLogsByObjectType (db, objectType, sortBy, sortType, limit, page, ext
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} extra='user'
+ * @param {string} [extra='user']
  * @returns {Object}
  */
 function getLogsByObject (db, objectType, objectId, sortBy, sortType, limit, page, extra = 'user') {
