@@ -2,26 +2,36 @@ const express = require('express')
 const router = express.Router()
 
 const TripModel = require('./../models/Trip')
+const StudentListModel = require('./../models/StudentList')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime } = req.body
+  let { carID, driverID, nannyID, routeID, studentListID, attendance, type, status, note, accident, startTime, endTime } = req.body
   let { db } = req.app.locals
-  TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime)
-    .then(({ insertedId }) => {
-      res.send({ _id: insertedId })
-      return LogModel.createLog(
-        db,
-        req.token ? req.token.userID : null,
-        req.headers['user-agent'],
-        req.ip,
-        `Create trip : _id = ${insertedId}`,
-        Date.now(),
-        0,
-        req.body,
-        'trip',
-        String(insertedId),
-      )
+  let p = studentListID != null
+    ? StudentListModel.getStudentListByID(db, studentListID, undefined)
+    : Promise.resolve(null)
+  p
+    .then((v) => {
+      let students = v === null
+        ? []
+        : v.studentIDs.map(c => ({ studentID: c, status: 0 }))
+      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime)
+        .then(({ insertedId }) => {
+          res.send({ _id: insertedId })
+          return LogModel.createLog(
+            db,
+            req.token ? req.token.userID : null,
+            req.headers['user-agent'],
+            req.ip,
+            `Create trip : _id = ${insertedId}`,
+            Date.now(),
+            0,
+            req.body,
+            'trip',
+            String(insertedId),
+          )
+        })
     })
     .catch(next)
 })
