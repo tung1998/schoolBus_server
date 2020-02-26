@@ -12,7 +12,7 @@ const TRIP_STATUS_CANCEL = 3 // hủy
  * @param {string} driverID
  * @param {string} nannyID
  * @param {string} routeID
- * @param {string} studentListID
+ * @param {Array} students
  * @param {Array} attendance
  * @param {number} type
  * @param {number} [status=TRIP_STATUS_WAITING]
@@ -22,14 +22,14 @@ const TRIP_STATUS_CANCEL = 3 // hủy
  * @param {number} endTime
  * @returns {Object}
  */
-function createTrip (db, carID, driverID, nannyID, routeID, studentListID, attendance, type, status = TRIP_STATUS_WAITING, note, accident, startTime, endTime) {
+function createTrip (db, carID, driverID, nannyID, routeID, students, attendance, type, status = TRIP_STATUS_WAITING, note, accident, startTime, endTime) {
   return db.collection(process.env.TRIP_COLLECTION)
     .insertOne({
       carID,
       driverID,
       nannyID,
       routeID,
-      studentListID,
+      students,
       attendance,
       type,
       status,
@@ -58,10 +58,10 @@ function countTrips (db) {
  * Get trips.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='car,driver,nanny,route,studentList']
+ * @param {string} [extra='car,driver,nanny,route,student']
  * @returns {Object}
  */
-function getTrips (db, page, extra = 'car,driver,nanny,route,studentList') {
+function getTrips (db, page, extra = 'car,driver,nanny,route,student') {
   return db.collection(process.env.TRIP_COLLECTION)
     .find({ isDeleted: false })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -78,10 +78,10 @@ function getTrips (db, page, extra = 'car,driver,nanny,route,studentList') {
  * Get trip by id.
  * @param {Object} db
  * @param {string} tripID
- * @param {string} [extra='car,driver,nanny,route,studentList']
+ * @param {string} [extra='car,driver,nanny,route,student']
  * @returns {Object}
  */
-function getTripByID (db, tripID, extra = 'car,driver,nanny,route,studentList') {
+function getTripByID (db, tripID, extra = 'car,driver,nanny,route,student') {
   return db.collection(process.env.TRIP_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(tripID) })
     .then((v) => {
@@ -95,10 +95,10 @@ function getTripByID (db, tripID, extra = 'car,driver,nanny,route,studentList') 
  * Get trips by ids.
  * @param {Object} db
  * @param {Array} tripIDs
- * @param {string} [extra='car,driver,nanny,route,studentList']
+ * @param {string} [extra='car,driver,nanny,route,student']
  * @returns {Object}
  */
-function getTripsByIDs (db, tripIDs, extra = 'car,driver,nanny,route,studentList') {
+function getTripsByIDs (db, tripIDs, extra = 'car,driver,nanny,route,student') {
   return db.collection(process.env.TRIP_COLLECTION)
     .find({ isDeleted: false, _id: { $in: tripIDs } })
     .toArray()
@@ -243,8 +243,8 @@ function addExtra (db, docs, extra) {
     let driverIDs = []
     let nannyIDs = []
     let routeIDs = []
-    let studentListIDs = []
-    docs.forEach(({ carID, driverID, nannyID, routeID, studentListID }) => {
+    let studentIDs = []
+    docs.forEach(({ carID, driverID, nannyID, routeID, students: s }) => {
       if (e.includes('car') && carID != null) {
         carIDs.push(ObjectID(carID))
       }
@@ -257,15 +257,15 @@ function addExtra (db, docs, extra) {
       if (e.includes('route') && routeID != null) {
         routeIDs.push(ObjectID(routeID))
       }
-      if (e.includes('studentList') && studentListID != null) {
-        studentListIDs.push(ObjectID(studentListID))
+      if (e.includes('student') && Array.isArray(s)) {
+        studentIDs.push(...s.map(({ studentID }) => ObjectID(studentID)))
       }
     })
     let cars
     let drivers
     let nannies
     let routes
-    let studentLists
+    let students
     let arr = []
     if (carIDs.length > 0) {
       let p = getCarsByIDs(db, carIDs)
@@ -295,17 +295,17 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
-    if (studentListIDs.length > 0) {
-      let p = getStudentListsByIDs(db, studentListIDs)
+    if (studentIDs.length > 0) {
+      let p = getStudentsByIDs(db, studentIDs)
         .then((v) => {
-          studentLists = v
+          students = v
         })
       arr.push(p)
     }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { carID, driverID, nannyID, routeID, studentListID } = c
+          let { carID, driverID, nannyID, routeID, students: s } = c
           if (cars !== undefined && carID != null) {
             c.car = cars[carID]
           }
@@ -318,15 +318,17 @@ function addExtra (db, docs, extra) {
           if (routes !== undefined && routeID != null) {
             c.route = routes[routeID]
           }
-          if (studentLists !== undefined && studentListID != null) {
-            c.studentList = studentLists[studentListID]
+          if (students !== undefined && Array.isArray(s)) {
+            c.students.forEach((e) => {
+              e.student = students[e.studentID]
+            })
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { carID, driverID, nannyID, routeID, studentListID } = doc
+  let { carID, driverID, nannyID, routeID, students } = doc
   let arr = []
   if (e.includes('car') && carID != null) {
     let p = getCarByID(db, carID)
@@ -356,10 +358,13 @@ function addExtra (db, docs, extra) {
       })
     arr.push(p)
   }
-  if (e.includes('studentList') && studentListID != null) {
-    let p = getStudentListByID(db, studentListID)
+  if (e.includes('student') && Array.isArray(students)) {
+    let studentIDs = students.map(({ studentID }) => ObjectID(studentID))
+    let p = getStudentsByIDs(db, studentIDs)
       .then((v) => {
-        doc.studentList = v
+        doc.students.forEach((c) => {
+          c.student = v[c.studentID]
+        })
       })
     arr.push(p)
   }
@@ -438,5 +443,5 @@ const { getCarsByIDs, getCarByID } = require('./Car')
 const { getDriversByIDs, getDriverByID } = require('./Driver')
 const { getNanniesByIDs, getNannyByID } = require('./Nanny')
 const { getRoutesByIDs, getRouteByID } = require('./Route')
-const { getStudentListsByIDs, getStudentListByID } = require('./StudentList')
+const { getStudentsByIDs } = require('./Student')
 const { deleteStudentTrips } = require('./StudentTrip')

@@ -5,9 +5,9 @@ const TripModel = require('./../models/Trip')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { carID, driverID, nannyID, routeID, studentListID, attendance, type, status, note, accident, startTime, endTime } = req.body
+  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime } = req.body
   let { db } = req.app.locals
-  TripModel.createTrip(db, carID, driverID, nannyID, routeID, studentListID, attendance, type, status, note, accident, startTime, endTime)
+  TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -78,13 +78,12 @@ router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
-  let { carID, driverID, nannyID, routeID, studentListID, attendance, type, status, note, accident, startTime, endTime } = req.body
+  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime } = req.body
   let obj = {}
   if (carID !== undefined) obj.carID = carID
   if (driverID !== undefined) obj.driverID = driverID
   if (nannyID !== undefined) obj.nannyID = nannyID
   if (routeID !== undefined) obj.routeID = routeID
-  if (studentListID !== undefined) obj.studentListID = studentListID
   if (attendance !== undefined) obj.attendance = attendance
   if (type !== undefined) obj.type = type
   if (status !== undefined) obj.status = status
@@ -92,6 +91,7 @@ router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   if (accident !== undefined) obj.accident = accident
   if (startTime !== undefined) obj.startTime = startTime
   if (endTime !== undefined) obj.endTime = endTime
+  if (students !== undefined) obj.students = students
   let { db } = req.app.locals
   TripModel.updateTrip(db, tripID, obj)
     .then(({ matchedCount }) => {
