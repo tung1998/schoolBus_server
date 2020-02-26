@@ -5,9 +5,9 @@ const CarModel = require('./../models/Car')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { carModelID, status } = req.body
+  let { carModelID, status, numberPlate } = req.body
   let { db } = req.app.locals
-  CarModel.createCar(db, carModelID, status)
+  CarModel.createCar(db, carModelID, status, numberPlate)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -78,10 +78,11 @@ router.get('/:carID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:carID([0-9a-fA-F]{24})', (req, res, next) => {
   let { carID } = req.params
-  let { carModelID, status } = req.body
+  let { carModelID, status, numberPlate } = req.body
   let obj = {}
   if (carModelID !== undefined) obj.carModelID = carModelID
   if (status !== undefined) obj.status = status
+  if (numberPlate !== undefined) obj.numberPlate = numberPlate
   let { db } = req.app.locals
   CarModel.updateCar(db, carID, obj)
     .then(({ matchedCount }) => {

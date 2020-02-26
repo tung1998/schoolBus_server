@@ -5,13 +5,15 @@ const { ObjectID } = require('mongodb')
  * @param {Object} db
  * @param {string} carModelID
  * @param {number} status
+ * @param {string} numberPlate
  * @returns {Object}
  */
-function createCar (db, carModelID, status) {
+function createCar (db, carModelID, status, numberPlate) {
   return db.collection(process.env.CAR_COLLECTION)
     .insertOne({
       carModelID,
       status,
+      numberPlate,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
