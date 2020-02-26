@@ -4,10 +4,10 @@ const { ObjectID } = require('mongodb')
  * Creats studentList.
  * @param {Object} db
  * @param {string} name
- * @param {Array} studentIDs
+ * @param {Array} [studentIDs=[]]
  * @returns {Object}
  */
-function createStudentList (db, name, studentIDs) {
+function createStudentList (db, name, studentIDs = []) {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
     .insertOne({
       name,
