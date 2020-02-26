@@ -405,6 +405,22 @@ function updateTripStatus (db, tripID, status) {
 }
 
 /**
+ * Update trip student status.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {string} studentID
+ * @param {number} status
+ * @returns {Object}
+ */
+function updateTripStudentStatus (db, tripID, studentID, status) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(tripID), 'students.studentID': studentID },
+      { $set: { updatedTime: Date.now(), 'students.$.status': status } },
+    )
+}
+
+/**
  * Delete trip.
  * @param {Object} db
  * @param {string} tripID
@@ -436,6 +452,7 @@ module.exports = {
   getTripsByDriver,
   updateTrip,
   updateTripStatus,
+  updateTripStudentStatus,
   deleteTrip,
 }
 
