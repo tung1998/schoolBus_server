@@ -9,7 +9,7 @@ router.post('/', (req, res, next) => {
   let { carID, driverID, nannyID, routeID, studentListID, attendance, type, status, note, accident, startTime, endTime } = req.body
   let { db } = req.app.locals
   let p = studentListID != null
-    ? StudentListModel.getStudentListByID(db, studentListID, undefined)
+    ? StudentListModel.getStudentListByID(db, studentListID, null)
     : Promise.resolve(null)
   p
     .then((v) => {
