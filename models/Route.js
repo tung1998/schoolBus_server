@@ -11,9 +11,11 @@ const { ObjectID } = require('mongodb')
  * @param {string} driverID
  * @param {string} nannyID
  * @param {string} studentListID
+ * @param {string} name
+ * @param {string} startTime
  * @returns {Object}
  */
-function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID) {
+function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID, name, startTime) {
   return db.collection(process.env.ROUTE_COLLECTION)
     .insertOne({
       requireCarStop,
@@ -24,6 +26,8 @@ function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll, c
       driverID,
       nannyID,
       studentListID,
+      name,
+      startTime,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
