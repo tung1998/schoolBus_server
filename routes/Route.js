@@ -5,9 +5,9 @@ const RouteModel = require('./../models/Route')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID } = req.body
+  let { requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID } = req.body
   let { db } = req.app.locals
-  RouteModel.createRoute(db, requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID)
+  RouteModel.createRoute(db, requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -78,7 +78,7 @@ router.get('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   let { routeID } = req.params
-  let { requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID } = req.body
+  let { requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID } = req.body
   let obj = {}
   if (requireCarStop !== undefined) obj.requireCarStop = requireCarStop
   if (pickupCarStop !== undefined) obj.pickupCarStop = pickupCarStop
@@ -87,6 +87,7 @@ router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   if (carID !== undefined) obj.carID = carID
   if (driverID !== undefined) obj.driverID = driverID
   if (nannyID !== undefined) obj.nannyID = nannyID
+  if (studentListID !== undefined) obj.studentListID = studentListID
   let { db } = req.app.locals
   RouteModel.updateRoute(db, routeID, obj)
     .then(({ matchedCount }) => {
