@@ -1,6 +1,7 @@
 const soas2 = require('simple-oauth2-server')
 const MongodbAPI = require('./mongodbAPI')
-const { loginByUsername } = require('./../models/User')
+const UserModel = require('./../models/User')
+const AdministratorModel = require('./../models/Administrator')
 
 const CANCEL_MESSAGE = 'Authentication is fail!'
 
@@ -11,6 +12,9 @@ const USER_TYPE_PARENT = 3
 const USER_TYPE_DRIVER = 4
 const USER_TYPE_TEACHER = 5
 
+const ADMINISTRATOR_TYPE_ROOT = 0
+const ADMINISTRATOR_TYPE_SCHOOL = 1
+
 module.exports = initOAuth2
 
 /**
@@ -18,13 +22,13 @@ module.exports = initOAuth2
  * @param {Object} req
  * @param {Function} next
  * @param {Function} cancel
- * @returns {Object}
+ * @returns {undefined}
  */
 function authentication (req, next, cancel) {
   if (!req.body.username || !req.body.password) {
     cancel(CANCEL_MESSAGE)
   } else {
-    loginByUsername(req.app.locals.db, req.body.username, req.body.password)
+    UserModel.loginByUsername(req.app.locals.db, req.body.username, req.body.password)
       .then((user) => {
         if (user) {
           req.user = user
@@ -43,7 +47,7 @@ function authentication (req, next, cancel) {
 /**
  * Token Extend.
  * @param {Object} req
- * @return {Object}
+ * @returns {Object}
  */
 function tokenExtend (req) {
   let result = {
@@ -57,7 +61,7 @@ function tokenExtend (req) {
  * Init OAuth2.
  * @param {Object} db
  * @param {Object} app
- * @returns {Object}
+ * @returns {undefined}
  */
 function initOAuth2 (db, app) {
   soas2.init({
@@ -75,30 +79,18 @@ function initOAuth2 (db, app) {
     method: ['get', 'post', 'put', 'delete'],
   })
 
-  soas2.layerAnd((req, next, cancel) => (
-    req.token.type === USER_TYPE_ADMINISTRATOR
-      ? next()
-      : cancel()
-  )).defend({
-    routes: ['/Module/Log', '/Module/:moduleID([0-9a-fA-F]{24})/Log'],
-    methods: ['get'],
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+        .then((v) => {
+          console.log(v)
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
-    routes: ['/Module'],
-    methods: ['post'],
-  }).defend({
-    routes: ['/Module/:moduleID([0-9a-fA-F]{24})'],
-    methods: ['put'],
-  }).defend({
-    routes: ['/Module/:moduleID([0-9a-fA-F]{24})'],
-    methods: ['delete'],
-  })
-
-  soas2.layerAnd((req, next, cancel) => (
-    req.token.type === USER_TYPE_ADMINISTRATOR
-      ? next()
-      : cancel()
-  )).defend({
-    routes: ['/Log(/**)?'],
-    methods: ['get'],
+    routes: ['/Module(/**)?', '/Log(/**)?', '/Administrator(/**)?'],
+    methods: ['get', 'post', 'put', 'delete'],
   })
 }
