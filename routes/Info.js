@@ -45,7 +45,7 @@ router.get('/', (req, res, next) => {
     })
     switch (userType) {
       case USER_TYPE_STUDENT:
-        getStudentByUser(db, req.token.userID, 'user')
+        getStudentByUser(db, req.token.userID)
           .then((student) => {
             delete student.user.password
             delete student.user.salt
@@ -55,7 +55,7 @@ router.get('/', (req, res, next) => {
           .catch(next)
         break
       case USER_TYPE_NANNY:
-        getNannyByUser(db, req.token.userID, 'user')
+        getNannyByUser(db, req.token.userID)
           .then((nanny) => {
             delete nanny.user.password
             delete nanny.user.salt
@@ -65,7 +65,7 @@ router.get('/', (req, res, next) => {
           .catch(next)
         break
       case USER_TYPE_PARENT:
-        getParentByUser(db, req.token.userID, 'user')
+        getParentByUser(db, req.token.userID)
           .then((parent) => {
             delete parent.user.password
             delete parent.user.salt
@@ -75,7 +75,7 @@ router.get('/', (req, res, next) => {
           .catch(next)
         break
       case USER_TYPE_DRIVER:
-        getDriverByUser(db, req.token.userID, 'user')
+        getDriverByUser(db, req.token.userID)
           .then((driver) => {
             delete driver.user.password
             delete driver.user.salt
@@ -85,7 +85,7 @@ router.get('/', (req, res, next) => {
           .catch(next)
         break
       case USER_TYPE_TEACHER:
-        getTeacherByUser(db, req.token.userID, 'user')
+        getTeacherByUser(db, req.token.userID)
           .then((teacher) => {
             delete teacher.user.password
             delete teacher.user.salt
@@ -95,7 +95,7 @@ router.get('/', (req, res, next) => {
           .catch(next)
         break
       default:
-        getAdministratorByUser(db, req.token.userID, 'user')
+        getAdministratorByUser(db, req.token.userID)
           .then((admin) => {
             if (!admin) {
               next()
