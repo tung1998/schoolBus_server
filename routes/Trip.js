@@ -2,21 +2,20 @@ const express = require('express')
 const router = express.Router()
 
 const TripModel = require('./../models/Trip')
-const StudentListModel = require('./../models/StudentList')
 const RouteModel = require('./../models/Route')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { carID, driverID, nannyID, routeID, studentListID, attendance, type, status, note, accident, startTime, endTime } = req.body
   let { db } = req.app.locals
-  let p = studentListID != null
-    ? StudentListModel.getStudentListByID(db, studentListID, null)
-    : Promise.resolve(null)
-  p
+  let { routeID, attendance, type, status, note, accident, startTime, endTime } = req.body
+  if (routeID === undefined) return res.status(400).send({ message: 'Missing routeID' })
+  RouteModel.getRouteByID(db, routeID, 'studentList')
     .then((v) => {
-      let students = v === null
+      if (v === null) return res.status(400).send({ message: 'Route Not Exist' })
+      let { carID, driverID, nannyID, studentList } = v
+      let students = studentList == null
         ? []
-        : v.studentIDs.map(c => ({ studentID: c, status: 0 }))
+        : studentList.studentIDs.map(c => ({ studentID: c, status: 0 }))
       return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
@@ -220,37 +219,6 @@ router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/status
           tripID,
         )
       }
-    })
-    .catch(next)
-})
-
-router.post('/byRoute', (req, res, next) => {
-  let { db } = req.app.locals
-  let { routeID, attendance, type, status, note, accident, startTime, endTime } = req.body
-  if (routeID === undefined) return res.status(400).send({ message: 'Missing routeID' })
-  RouteModel.getRouteByID(db, routeID, 'studentList')
-    .then((v) => {
-      if (v === null) return res.status(400).send({ message: 'Route Not Exist' })
-      let { carID, driverID, nannyID, studentList } = v
-      let students = studentList == null
-        ? []
-        : studentList.studentIDs.map(c => ({ studentID: c, status: 0 }))
-      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime)
-        .then(({ insertedId }) => {
-          res.send({ _id: insertedId })
-          return LogModel.createLog(
-            db,
-            req.token ? req.token.userID : null,
-            req.headers['user-agent'],
-            req.ip,
-            `Create trip by route : _id = ${insertedId}`,
-            Date.now(),
-            0,
-            req.body,
-            'trip',
-            String(insertedId),
-          )
-        })
     })
     .catch(next)
 })
