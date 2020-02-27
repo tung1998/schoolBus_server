@@ -83,7 +83,6 @@ function initOAuth2 (db, app) {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
       return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
         .then((v) => {
-          console.log(v)
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           return cancel()
         })
@@ -92,5 +91,17 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Module(/**)?', '/Log(/**)?', '/Administrator(/**)?'],
     methods: ['get', 'post', 'put', 'delete'],
+  }).defend({
+    routes: ['/School'],
+    method: ['post'],
+  }).defend({
+    routes: ['/School', '/School/:page(\\d+)', '/School/:schoolID([0-9a-fA-F]{24})', '/School/Log', '/School/:schoolID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/School/:schoolID([0-9a-fA-F]{24})'],
+    method: ['put'],
+  }).defend({
+    routes: ['/School/:schoolID([0-9a-fA-F]{24})'],
+    method: ['delete'],
   })
 }
