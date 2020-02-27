@@ -5,9 +5,9 @@ const AdministratorModel = require('./../models/Administrator')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, adminType, permission } = req.body
+  let { username, password, image, name, phone, email, adminType, permission, schoolID } = req.body
   let { db } = req.app.locals
-  AdministratorModel.createAdministrator(db, username, password, image, name, phone, email, adminType, permission)
+  AdministratorModel.createAdministrator(db, username, password, image, name, phone, email, adminType, permission, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -78,10 +78,11 @@ router.get('/:administratorID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:administratorID([0-9a-fA-F]{24})', (req, res, next) => {
   let { administratorID } = req.params
-  let { adminType, permission, image, name, phone, email } = req.body
+  let { adminType, permission, schoolID, image, name, phone, email } = req.body
   let obj = {}
   if (adminType !== undefined) obj.adminType = adminType
   if (permission !== undefined) obj.permission = permission
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let obj1 = {}
   if (image !== undefined) obj1.image = image
   if (name !== undefined) obj1.name = name

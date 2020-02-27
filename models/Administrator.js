@@ -13,9 +13,10 @@ const USER_TYPE_ADMINISTRATOR = 0
  * @param {string} email
  * @param {number} adminType
  * @param {string} permission
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createAdministrator (db, username, password, image, name, phone, email, adminType, permission) {
+function createAdministrator (db, username, password, image, name, phone, email, adminType, permission, schoolID) {
   return createUser(db, username, password, image, name, phone, email, USER_TYPE_ADMINISTRATOR)
     .then(({ insertedId }) => (
       db.collection(process.env.ADMINISTRATOR_COLLECTION)
@@ -23,6 +24,7 @@ function createAdministrator (db, username, password, image, name, phone, email,
           userID: String(insertedId),
           adminType,
           permission,
+          schoolID,
           createdTime: Date.now(),
           updatedTime: Date.now(),
           isDeleted: false,
@@ -45,10 +47,10 @@ function countAdministrators (db) {
  * Get administrators.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getAdministrators (db, page, extra = 'user') {
+function getAdministrators (db, page, extra = 'user,school') {
   return db.collection(process.env.ADMINISTRATOR_COLLECTION)
     .find({ isDeleted: false })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -65,10 +67,10 @@ function getAdministrators (db, page, extra = 'user') {
  * Get administrator by id.
  * @param {Object} db
  * @param {string} administratorID
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getAdministratorByID (db, administratorID, extra = 'user') {
+function getAdministratorByID (db, administratorID, extra = 'user,school') {
   return db.collection(process.env.ADMINISTRATOR_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(administratorID) })
     .then((v) => {
@@ -82,10 +84,10 @@ function getAdministratorByID (db, administratorID, extra = 'user') {
  * Get administrator by user.
  * @param {Object} db
  * @param {string} userID
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getAdministratorByUser (db, userID, extra = 'user') {
+function getAdministratorByUser (db, userID, extra = 'user,school') {
   return db.collection(process.env.ADMINISTRATOR_COLLECTION)
     .findOne({ isDeleted: false, userID })
     .then((v) => {
@@ -99,10 +101,10 @@ function getAdministratorByUser (db, userID, extra = 'user') {
  * Get administrators by ids.
  * @param {Object} db
  * @param {Array} administratorIDs
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getAdministratorsByIDs (db, administratorIDs, extra = 'user') {
+function getAdministratorsByIDs (db, administratorIDs, extra = 'user,school') {
   return db.collection(process.env.ADMINISTRATOR_COLLECTION)
     .find({ isDeleted: false, _id: { $in: administratorIDs } })
     .toArray()
@@ -125,12 +127,17 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let userIDs = []
-    docs.forEach(({ userID }) => {
+    let schoolIDs = []
+    docs.forEach(({ userID, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
       }
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
+      }
     })
     let users
+    let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -139,24 +146,41 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID } = c
+          let { userID, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
+          }
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { userID } = doc
+  let { userID, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
       .then((v) => {
         doc.user = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
       })
     arr.push(p)
   }
@@ -238,3 +262,4 @@ module.exports = {
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
