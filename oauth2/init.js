@@ -95,13 +95,28 @@ function initOAuth2 (db, app) {
     routes: ['/School'],
     method: ['post'],
   }).defend({
-    routes: ['/School', '/School/:page(\\d+)', '/School/:schoolID([0-9a-fA-F]{24})', '/School/Log', '/School/:schoolID([0-9a-fA-F]{24})/Log'],
+    routes: ['/School', '/School/:page(\\d+)', '/School/Log', '/School/:schoolID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/School/:schoolID([0-9a-fA-F]{24})'],
+    method: ['delete'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL && v.schoolID === req.params.schoolID) return next()
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/School/:schoolID([0-9a-fA-F]{24})'],
     method: ['get'],
   }).defend({
     routes: ['/School/:schoolID([0-9a-fA-F]{24})'],
     method: ['put'],
-  }).defend({
-    routes: ['/School/:schoolID([0-9a-fA-F]{24})'],
-    method: ['delete'],
   })
 }
