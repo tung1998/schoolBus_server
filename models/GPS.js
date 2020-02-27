@@ -185,6 +185,33 @@ function getGPSByCar (db, carID, page, extra = 'car') {
     })
 }
 
+/**
+ * Get GPS last.
+ * @param {Object} db
+ * @param {string} [extra='car']
+ * @returns {Object}
+ */
+function getGPSLast (db, extra = 'car') {
+  return db.collection(process.env.GPS_COLLECTION)
+    .distinct('carID', { isDeleted: false })
+    .then((v) => {
+      let arr = v.map(c => (
+        db.collection(process.env.GPS_COLLECTION)
+          .find({ isDeleted: false, carID: c })
+          .sort({ createdTime: -1 })
+          .limit(1)
+          .toArray()
+          .then(([doc]) => doc)
+      ))
+      return Promise.all(arr)
+    })
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
 module.exports = {
   createGPS,
   countGPS,
@@ -194,6 +221,7 @@ module.exports = {
   updateGPS,
   deleteGPS,
   getGPSByCar,
+  getGPSLast,
 }
 
 const { getCarsByIDs, getCarByID } = require('./Car')

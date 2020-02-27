@@ -160,4 +160,12 @@ router.get('/byCar', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/last', (req, res, next) => {
+  let { db } = req.app.locals
+  let { extra } = req.query
+  GPSModel.getGPSLast(db, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router
