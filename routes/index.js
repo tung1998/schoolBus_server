@@ -45,6 +45,7 @@ router.use('/Module', require('./Module'))
 router.use('/ParentRequest', require('./ParentRequest'))
 router.use('/Car', require('./Car'))
 router.use('/CarStop', require('./CarStop'))
+router.use('/GPS', require('./GPS'))
 
 router.use((req, res) => {
   res.status(404).send({ message: 'Not Found' })
