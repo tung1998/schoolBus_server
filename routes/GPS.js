@@ -151,4 +151,13 @@ router.get('/:GPSID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/byCar', (req, res, next) => {
+  let { db } = req.app.locals
+  let { carID, page, extra } = req.query
+  page = Number(page) || 1
+  GPSModel.getGPSByCar(db, carID, page, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router

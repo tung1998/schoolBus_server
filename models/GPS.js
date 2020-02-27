@@ -164,6 +164,27 @@ function deleteGPS (db, GPSID) {
     )
 }
 
+/**
+ * Get GPS by car.
+ * @param {Object} db
+ * @param {string} carID
+ * @param {number} page
+ * @param {string} [extra='car']
+ * @returns {Object}
+ */
+function getGPSByCar (db, carID, page, extra = 'car') {
+  return db.collection(process.env.GPS_COLLECTION)
+    .find({ isDeleted: false, carID })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
 module.exports = {
   createGPS,
   countGPS,
@@ -172,6 +193,7 @@ module.exports = {
   getGPSByIDs,
   updateGPS,
   deleteGPS,
+  getGPSByCar,
 }
 
 const { getCarsByIDs, getCarByID } = require('./Car')
