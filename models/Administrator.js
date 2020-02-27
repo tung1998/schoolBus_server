@@ -2,6 +2,9 @@ const { ObjectID } = require('mongodb')
 
 const USER_TYPE_ADMINISTRATOR = 0
 
+const ADMINISTRATOR_TYPE_ROOT = 0
+const ADMINISTRATOR_TYPE_SCHOOL = 1
+
 /**
  * Creats administrator.
  * @param {Object} db
