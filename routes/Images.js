@@ -73,6 +73,25 @@ router.get('/:imageId', (req, res) => {
     }
 })
 
+router.get('/:imageId/:imageIndex', (req, res) => {
+    let { db } = req.app.locals
+    if (req.params.imageId && parseInt(req.params.imageIndex) >= 0) {
+        const imageId = req.params.imageId
+        const imageIndex = parseInt(req.params.imageIndex)
+        db.collection(`images`).findOne({ imageId }).then(data => {
+            if (!data || !data.IMG_IDS[imageIndex])
+                res.send({ error: true })
+            else {
+                getLinkFile(data.IMG_IDS[imageIndex]).then(IMG_Link => {
+                    res.redirect(IMG_Link);
+                }).catch(console.log)
+            }
+        })
+    } else {
+        res.send({ error: true })
+    }
+})
+
 router.get('/', (req, res) => {
     let { db } = req.app.locals
     db.collection(`images`).find({}).toArray().then(data => {
