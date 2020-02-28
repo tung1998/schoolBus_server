@@ -10,7 +10,7 @@ const { MongoClient } = require('mongodb')
  * @returns {Object}
  */
 function initDatabase (host, port, username, password, name) {
-  return MongoClient.connect(`mongodb://${username}:${password}@${host}:${port}/${name}`)
+  return MongoClient.connect(`mongodb://${host}:${port}/${name}`)
 }
 
 module.exports = initDatabase

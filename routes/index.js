@@ -4,7 +4,7 @@ const bodyParser = require('body-parser')
 const router = express.Router()
 
 router.use(bodyParser.urlencoded({ extended: true }))
-router.use(bodyParser.json())
+router.use(bodyParser.json({ limit: '50mb' }))
 router.use((req, res, next) => {
   req.ip = (req.headers['x-forwarded-for']
     || req.connection.remoteAddress
@@ -46,6 +46,7 @@ router.use('/ParentRequest', require('./ParentRequest'))
 router.use('/Car', require('./Car'))
 router.use('/CarStop', require('./CarStop'))
 router.use('/GPS', require('./GPS'))
+router.use('/Images', require('./Images'))
 
 router.use((req, res) => {
   res.status(404).send({ message: 'Not Found' })

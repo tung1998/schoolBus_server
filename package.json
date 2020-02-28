@@ -21,6 +21,9 @@
     "express": "^4.17.1",
     "localenv": "^0.2.2",
     "mongodb": "^2.2.36",
-    "simple-oauth2-server": "^2.1.1"
+    "simple-oauth2-server": "^2.1.1",
+    "body-parser": "^1.19.0",
+    "googleapis": "^39.2.0",
+    "request": "^2.88.0"
   }
 }
