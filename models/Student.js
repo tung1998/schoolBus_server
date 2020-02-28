@@ -321,6 +321,24 @@ function deleteStudentsByClass (db, classID) {
     })
 }
 
+/**
+ * Get students carStopIDs.
+ * @param {Object} db
+ * @param {Array} studentIDs
+ * @returns {Object}
+ */
+function getStudentsCarStopIDs (db, studentIDs) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .distinct(
+      'carStopID',
+      {
+        isDeleted: false,
+        _id: Array.isArray(studentIDs) ? { $in: studentIDs.map(ObjectID) } : ObjectID(studentIDs),
+        carStopID: { $ne: null },
+      },
+    )
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -333,6 +351,7 @@ module.exports = {
   deleteStudent,
   deleteStudentByUser,
   deleteStudentsByClass,
+  getStudentsCarStopIDs,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
