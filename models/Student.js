@@ -123,13 +123,13 @@ function getStudentsByIDs (db, studentIDs, extra = 'user,class,carStop') {
 /**
  * Get students by class.
  * @param {Object} db
- * @param {Array} classID
+ * @param {(string|Array)} classID
  * @param {string} [extra='user,class,carStop']
  * @returns {Object}
  */
 function getStudentsByClass (db, classID, extra = 'user,class,carStop') {
   return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false, classID })
+    .find({ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID })
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
