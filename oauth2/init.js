@@ -3,6 +3,7 @@ const MongodbAPI = require('./mongodbAPI')
 const UserModel = require('./../models/User')
 const AdministratorModel = require('./../models/Administrator')
 const ClassModel = require('./../models/Class')
+const TeacherModel = require('./../models/Teacher')
 
 const CANCEL_MESSAGE = 'Authentication is fail!'
 
@@ -104,6 +105,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Class', '/Class/:page(\\d+)', '/Class/Log', '/Class/:classID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
+  }).defend({
+    routes: ['/Teacher', '/Teacher/:page(\\d+)', '/Teacher/Log', '/Teacher/:teacherID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
@@ -159,6 +163,47 @@ function initOAuth2 (db, app) {
     return cancel()
   }).defend({
     routes: ['/Class/:classID([0-9a-fA-F]{24})'],
+    method: ['get', 'put', 'delete'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Teacher/bySchool'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Teacher'],
+    method: ['post'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return TeacherModel.getTeacherByID(db, req.params.teacherID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Teacher/:teacherID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
   })
 }

@@ -5,7 +5,8 @@ const TeacherModel = require('./../models/Teacher')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, schoolID } = req.body
+  let { username, password, image, name, phone, email } = req.body
+  let schoolID = req.schoolID || req.body.schoolID
   let { db } = req.app.locals
   TeacherModel.createTeacher(db, username, password, image, name, phone, email, schoolID)
     .then(({ insertedId }) => {
@@ -156,7 +157,8 @@ router.get('/:teacherID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 
 router.get('/bySchool', (req, res, next) => {
   let { db } = req.app.locals
-  let { schoolID, extra } = req.query
+  let { extra } = req.query
+  let schoolID = req.schoolID || req.query.schoolID
   TeacherModel.getTeachersBySchool(db, schoolID, extra)
     .then(v => res.send(v))
     .catch(next)
