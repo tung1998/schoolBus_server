@@ -5,7 +5,8 @@ const ClassModel = require('./../models/Class')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { name, schoolID, teacherID } = req.body
+  let { name, teacherID } = req.body
+  let schoolID = req.schoolID || req.body.schoolID
   let { db } = req.app.locals
   ClassModel.createClass(db, name, schoolID, teacherID)
     .then(({ insertedId }) => {
@@ -153,7 +154,8 @@ router.get('/:classID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 
 router.get('/bySchool', (req, res, next) => {
   let { db } = req.app.locals
-  let { schoolID, extra } = req.query
+  let { extra } = req.query
+  let schoolID = req.schoolID || req.query.schoolID
   ClassModel.getClassesBySchool(db, schoolID, extra)
     .then(v => res.send(v))
     .catch(next)
