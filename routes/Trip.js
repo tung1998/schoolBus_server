@@ -223,4 +223,14 @@ router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/status
     .catch(next)
 })
 
+router.get('/byTime', (req, res, next) => {
+  let { db } = req.app.locals
+  let { startTime, endTime, extra } = req.query
+  startTime = Number(startTime)
+  endTime = Number(endTime)
+  TripModel.getTripsByTime(db, startTime, endTime, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router

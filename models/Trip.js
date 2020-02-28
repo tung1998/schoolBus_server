@@ -440,6 +440,25 @@ function deleteTrip (db, tripID) {
   return p
 }
 
+/**
+ * Get trips by time.
+ * @param {Object} db
+ * @param {number} startTime
+ * @param {number} endTime
+ * @param {string} [extra='car,driver,nanny,route,student']
+ * @returns {Object}
+ */
+function getTripsByTime (db, startTime, endTime, extra = 'car,driver,nanny,route,student') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, startTime: { $gte: startTime, $lt: endTime } })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
 module.exports = {
   createTrip,
   countTrips,
@@ -454,6 +473,7 @@ module.exports = {
   updateTripStatus,
   updateTripStudentStatus,
   deleteTrip,
+  getTripsByTime,
 }
 
 const { getCarsByIDs, getCarByID } = require('./Car')
