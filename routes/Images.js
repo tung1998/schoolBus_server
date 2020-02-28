@@ -8,9 +8,9 @@ let GG_FOLDER = {}
 
 router.post('/', (req, res) => {
     let { db } = req.app.locals
-    if (req.body.OSM_ID && req.body.BASE64 && Array.isArray(req.body.BASE64)) {
-        const OSM_ID = req.body.OSM_ID
-        db.collection(`images`).findOne({ OSM_ID }).then(doc => {
+    if (req.body.imageId && req.body.BASE64 && Array.isArray(req.body.BASE64)) {
+        const imageId = req.body.imageId
+        db.collection(`images`).findOne({ imageId }).then(doc => {
             const images = base64ToImage(req.body.BASE64)
             if (!GG_FOLDER.id || GG_FOLDER.time < Date.now() - 24 * 60 * 60 * 1000) {
                 createFolderController().then(id => {
@@ -19,9 +19,9 @@ router.post('/', (req, res) => {
                     return uploadFileController(id, images)
                 }).then(fileIds => {
                     if (!doc) {
-                        db.collection(`images`).insert({ OSM_ID, IMG_IDS: fileIds })
+                        db.collection(`images`).insert({ imageId, IMG_IDS: fileIds })
                     } else {
-                        db.collection(`images`).update({ OSM_ID }, { $push: { IMG_IDS: { $each: fileIds } } })
+                        db.collection(`images`).update({ imageId }, { $push: { IMG_IDS: { $each: fileIds } } })
                     }
                     res.send({ error: false })
                     return publicFileController(fileIds)
@@ -32,9 +32,9 @@ router.post('/', (req, res) => {
             } else {
                 uploadFileController(GG_FOLDER.id, images).then(fileIds => {
                     if (!doc) {
-                        db.collection(`images`).insert({ OSM_ID, IMG_IDS: fileIds })
+                        db.collection(`images`).insert({ imageId, IMG_IDS: fileIds })
                     } else {
-                        db.collection(`images`).update({ OSM_ID }, { $push: { IMG_IDS: { $each: fileIds } } })
+                        db.collection(`images`).update({ imageId }, { $push: { IMG_IDS: { $each: fileIds } } })
                     }
                     res.send({ error: false })
                     return publicFileController(fileIds)
@@ -49,11 +49,11 @@ router.post('/', (req, res) => {
     }
 })
 
-router.get('/:OSM_ID', (req, res) => {
+router.get('/:imageId', (req, res) => {
     let { db } = req.app.locals
-    if (req.params.OSM_ID) {
-        const OSM_ID = req.params.OSM_ID
-        db.collection(`images`).findOne({ OSM_ID }).then(data => {
+    if (req.params.imageId) {
+        const imageId = req.params.imageId
+        db.collection(`images`).findOne({ imageId }).then(data => {
             if (!data)
                 res.send({ error: false, result: data })
             else {
@@ -76,7 +76,7 @@ router.get('/:OSM_ID', (req, res) => {
 router.get('/', (req, res) => {
     let { db } = req.app.locals
     db.collection(`images`).find({}).toArray().then(data => {
-        const result = data.map(d => d.OSM_ID)
+        const result = data.map(d => d.imageId)
         res.send({ error: false, result })
     })
 })
