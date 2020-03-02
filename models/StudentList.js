@@ -211,17 +211,30 @@ function updateStudentListRemoveStudentIDs (db, studentListID, studentIDs) {
 }
 
 /**
- * Update studentLists remove studentIDs.
+ * Update studentLists remove studentIDs carStopIDs.
  * @param {Object} db
- * @param {(Array|string)} studentIDs
+ * @param {string} studentID
+ * @param {string} carStopID
  * @returns {Object}
  */
-function updateStudentListsRemoveStudentIDs (db, studentIDs) {
+function updateStudentListsRemoveStudentIDsCarStopIDs (db, studentID, carStopID) {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
-    .updateMany(
-      { isDeleted: false },
-      { $set: { updatedTime: Date.now() }, $pullAll: { studentIDs: Array.isArray(studentIDs) ? studentIDs : [studentIDs] } },
-    )
+    .find({ isDeleted: false, studentIDs: studentID })
+    .toArray()
+    .then(v => addExtra(db, v, 'student'))
+    .then((v) => {
+      v.forEach(({ _id, studentIDs, students, carStopIDs }) => {
+        studentIDs.splice(studentIDs.indexOf(studentID), 1)
+        if (carStopID !== null && !students.some(e => e != null && e.carStopID === carStopID && String(e._id) !== studentID) && carStopIDs.includes(carStopID)) {
+          carStopIDs.splice(carStopIDs.indexOf(carStopID), 1)
+        }
+        db.collection(process.env.STUDENT_LIST_COLLECTION)
+          .updateOne(
+            { isDeleted: false, _id },
+            { $set: { updatedTime: Date.now(), carStopIDs, studentIDs } },
+          )
+      })
+    })
 }
 
 /**
@@ -282,7 +295,7 @@ module.exports = {
   updateStudentList,
   updateStudentListAddStudentIDsCarStopIDs,
   updateStudentListRemoveStudentIDs,
-  updateStudentListsRemoveStudentIDs,
+  updateStudentListsRemoveStudentIDsCarStopIDs,
   deleteStudentList,
   updateStudentListsReplaceCarStop,
 }

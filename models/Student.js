@@ -270,13 +270,13 @@ function deleteStudent (db, studentID) {
       { isDeleted: false, _id: ObjectID(studentID) },
       null,
       { $set: { isDeleted: true } },
-      { fields: { _id: 0, userID: 1 } },
+      { fields: { _id: 0, userID: 1, carStopID: 1 } },
     )
   p.then(({ lastErrorObject: { updatedExisting }, value }) => {
     if (updatedExisting) {
       deleteUser(db, value.userID, false)
       deleteStudentTrips(db, 'studentID', studentID)
-      updateStudentListsRemoveStudentIDs(db, studentID)
+      updateStudentListsRemoveStudentIDsCarStopIDs(db, studentID, value.carStopID)
     }
   })
   return p
@@ -294,12 +294,12 @@ function deleteStudentByUser (db, userID) {
       { isDeleted: false, userID },
       null,
       { $set: { isDeleted: true } },
-      { fields: { _id: 1 } },
+      { fields: { carStopID: 1 } },
     )
     .then(({ lastErrorObject: { updatedExisting }, value }) => {
       if (updatedExisting) {
         deleteStudentTrips(db, 'studentID', String(value._id))
-        updateStudentListsRemoveStudentIDs(db, String(value._id))
+        updateStudentListsRemoveStudentIDsCarStopIDs(db, String(value._id), value.carStopID)
       }
     })
 }
@@ -359,4 +359,4 @@ const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = requi
 const { getClassesByIDs, getClassByID } = require('./Class')
 const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
 const { deleteStudentTrips } = require('./StudentTrip')
-const { updateStudentListsRemoveStudentIDs, updateStudentListsReplaceCarStop } = require('./StudentList')
+const { updateStudentListsRemoveStudentIDsCarStopIDs, updateStudentListsReplaceCarStop } = require('./StudentList')
