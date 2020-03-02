@@ -170,24 +170,27 @@ router.put('/:studentListID([0-9a-fA-F]{24})/studentIDs/add', (req, res, next) =
   let { studentListID } = req.params
   let { studentIDs } = req.body
   let { db } = req.app.locals
-  StudentListModel.updateStudentListAddStudentIDs(db, studentListID, studentIDs)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
-      else {
-        res.send()
-        return LogModel.createLog(
-          db,
-          req.token ? req.token.userID : null,
-          req.headers['user-agent'],
-          req.ip,
-          `Update studentList add studentIDs : _id = ${studentListID}`,
-          Date.now(),
-          1,
-          req.body,
-          'studentList',
-          studentListID,
-        )
-      }
+  StudentModel.getStudentsCarStopIDs(db, studentIDs)
+    .then((carStopIDs) => {
+      return StudentListModel.updateStudentListAddStudentIDsCarStopIDs(db, studentListID, studentIDs, carStopIDs)
+        .then(({ matchedCount }) => {
+          if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+          else {
+            res.send()
+            return LogModel.createLog(
+              db,
+              req.token ? req.token.userID : null,
+              req.headers['user-agent'],
+              req.ip,
+              `Update studentList add studentIDs : _id = ${studentListID}`,
+              Date.now(),
+              1,
+              req.body,
+              'studentList',
+              studentListID,
+            )
+          }
+        })
     })
     .catch(next)
 })

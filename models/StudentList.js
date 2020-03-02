@@ -178,13 +178,20 @@ function updateStudentList (db, studentListID, obj) {
  * @param {Object} db
  * @param {string} studentListID
  * @param {(Array|string)} studentIDs
+ * @param {(Array|string)} carStopIDs
  * @returns {Object}
  */
-function updateStudentListAddStudentIDs (db, studentListID, studentIDs) {
+function updateStudentListAddStudentIDsCarStopIDs (db, studentListID, studentIDs, carStopIDs) {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(studentListID) },
-      { $set: { updatedTime: Date.now() }, $addToSet: { studentIDs: Array.isArray(studentIDs) ? { $each: studentIDs } : studentIDs } },
+      {
+        $set: { updatedTime: Date.now() },
+        $addToSet: {
+          studentIDs: Array.isArray(studentIDs) ? { $each: studentIDs } : studentIDs,
+          carStopIDs: Array.isArray(carStopIDs) ? { $each: carStopIDs } : carStopIDs,
+        },
+      },
     )
 }
 
@@ -238,7 +245,7 @@ module.exports = {
   getStudentListByID,
   getStudentListsByIDs,
   updateStudentList,
-  updateStudentListAddStudentIDs,
+  updateStudentListAddStudentIDsCarStopIDs,
   updateStudentListRemoveStudentIDs,
   updateStudentListsRemoveStudentIDs,
   deleteStudentList,
