@@ -97,7 +97,7 @@ router.put('/:studentListID([0-9a-fA-F]{24})', (req, res, next) => {
   }
   p
     .then(() => {
-      StudentListModel.updateStudentList(db, studentListID, obj)
+      return StudentListModel.updateStudentList(db, studentListID, obj)
         .then(({ matchedCount }) => {
           if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
           else {
@@ -196,24 +196,37 @@ router.put('/:studentListID([0-9a-fA-F]{24})/studentIDs/remove', (req, res, next
   let { studentListID } = req.params
   let { studentIDs } = req.body
   let { db } = req.app.locals
-  StudentListModel.updateStudentListRemoveStudentIDs(db, studentListID, studentIDs)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
-      else {
-        res.send()
-        return LogModel.createLog(
-          db,
-          req.token ? req.token.userID : null,
-          req.headers['user-agent'],
-          req.ip,
-          `Update studentList remove studentIDs : _id = ${studentListID}`,
-          Date.now(),
-          1,
-          req.body,
-          'studentList',
-          studentListID,
-        )
-      }
+  StudentListModel.getStudentListByID(db, studentListID, 'student')
+    .then((v) => {
+      if (v === null) return res.status(404).send({ message: 'Not Found' })
+      studentIDs = Array.isArray(studentIDs) ? studentIDs.reduce((a, c) => ({ ...a, [c]: null }), {}) : { [studentIDs]: null }
+      let carStopIDs = {}
+      let obj = {}
+      obj.studentIDs = v.studentIDs.filter((e, i) => {
+        if (e in studentIDs) return false
+        if (v.students[i] != null && v.students[i].carStopID != null) carStopIDs[v.students[i].carStopID] = null
+        return true
+      })
+      obj.carStopIDs = v.carStopIDs.filter(e => e in carStopIDs)
+      return StudentListModel.updateStudentList(db, studentListID, obj)
+        .then(({ matchedCount }) => {
+          if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+          else {
+            res.send()
+            return LogModel.createLog(
+              db,
+              req.token ? req.token.userID : null,
+              req.headers['user-agent'],
+              req.ip,
+              `Update studentList remove studentIDs : _id = ${studentListID}`,
+              Date.now(),
+              1,
+              req.body,
+              'studentList',
+              studentListID,
+            )
+          }
+        })
     })
     .catch(next)
 })
