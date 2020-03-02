@@ -238,6 +238,41 @@ function deleteStudentList (db, studentListID) {
     )
 }
 
+/**
+ * Update studentLists replace carStop.
+ * @param {Object} db
+ * @param {string} studentID
+ * @param {string} carStopID
+ * @param {string} newCarStopID
+ * @returns {Object}
+ */
+function updateStudentListsReplaceCarStop (db, studentID, carStopID, newCarStopID) {
+  return db.collection(process.env.STUDENT_LIST_COLLECTION)
+    .find({ isDeleted: false, studentIDs: studentID, carStopIDs: { $elemMatch: { $exists: true } } })
+    .toArray()
+    .then(v => addExtra(db, v, 'student'))
+    .then((v) => {
+      v.forEach(({ _id, students, carStopIDs }) => {
+        let b = false
+        if (carStopID !== null && !students.some(e => e.carStopID === carStopID) && carStopIDs.includes(carStopID)) {
+          b = true
+          carStopIDs.splice(carStopIDs.indexOf(carStopID), 1)
+        }
+        if (newCarStopID !== null && !carStopIDs.includes(newCarStopID)) {
+          b = true
+          carStopIDs.push(newCarStopID)
+        }
+        if (b) {
+          db.collection(process.env.STUDENT_LIST_COLLECTION)
+            .updateOne(
+              { isDeleted: false, _id },
+              { $set: { updatedTime: Date.now(), carStopIDs } },
+            )
+        }
+      })
+    })
+}
+
 module.exports = {
   createStudentList,
   countStudentLists,
@@ -249,6 +284,7 @@ module.exports = {
   updateStudentListRemoveStudentIDs,
   updateStudentListsRemoveStudentIDs,
   deleteStudentList,
+  updateStudentListsReplaceCarStop,
 }
 
 const { getStudentsByIDs } = require('./Student')
