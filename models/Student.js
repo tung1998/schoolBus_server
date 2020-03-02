@@ -246,10 +246,11 @@ function updateStudent (db, studentID, obj, obj1) {
       { isDeleted: false, _id: ObjectID(studentID) },
       null,
       { $set: { updatedTime: Date.now(), ...obj } },
-      { fields: { _id: 0, userID: 1 } },
+      { fields: { _id: 0, userID: 1, carStopID: 1 } },
     )
     .then((v) => {
       if (v.lastErrorObject.updatedExisting) {
+        if (obj.carStopID !== undefined && obj.carStopID !== v.value.carStopID) updateStudentListsReplaceCarStop(db, studentID, v.value.carStopID, obj.carStopID)
         return updateUser(db, v.value.userID, obj1)
           .then(() => v)
       }
@@ -358,4 +359,4 @@ const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = requi
 const { getClassesByIDs, getClassByID } = require('./Class')
 const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
 const { deleteStudentTrips } = require('./StudentTrip')
-const { updateStudentListsRemoveStudentIDs } = require('./StudentList')
+const { updateStudentListsRemoveStudentIDs, updateStudentListsReplaceCarStop } = require('./StudentList')
