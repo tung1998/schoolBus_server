@@ -2,26 +2,30 @@ const express = require('express')
 const router = express.Router()
 
 const StudentListModel = require('./../models/StudentList')
+const StudentModel = require('./../models/Student')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { name, studentIDs } = req.body
+  let { name, studentIDs = [] } = req.body
   let { db } = req.app.locals
-  StudentListModel.createStudentList(db, name, studentIDs)
-    .then(({ insertedId }) => {
-      res.send({ _id: insertedId })
-      return LogModel.createLog(
-        db,
-        req.token ? req.token.userID : null,
-        req.headers['user-agent'],
-        req.ip,
-        `Create studentList : _id = ${insertedId}`,
-        Date.now(),
-        0,
-        req.body,
-        'studentList',
-        String(insertedId),
-      )
+  StudentModel.getStudentsCarStopIDs(db, studentIDs)
+    .then((carStopIDs) => {
+      return StudentListModel.createStudentList(db, name, studentIDs, carStopIDs)
+        .then(({ insertedId }) => {
+          res.send({ _id: insertedId })
+          return LogModel.createLog(
+            db,
+            req.token ? req.token.userID : null,
+            req.headers['user-agent'],
+            req.ip,
+            `Create studentList : _id = ${insertedId}`,
+            Date.now(),
+            0,
+            req.body,
+            'studentList',
+            String(insertedId),
+          )
+        })
     })
     .catch(next)
 })
@@ -77,30 +81,41 @@ router.get('/:studentListID([0-9a-fA-F]{24})', (req, res, next) => {
 })
 
 router.put('/:studentListID([0-9a-fA-F]{24})', (req, res, next) => {
+  let { db } = req.app.locals
   let { studentListID } = req.params
-  let { name, studentIDs } = req.body
+  let { name, studentIDs, carStopIDs } = req.body
   let obj = {}
   if (name !== undefined) obj.name = name
   if (studentIDs !== undefined) obj.studentIDs = studentIDs
-  let { db } = req.app.locals
-  StudentListModel.updateStudentList(db, studentListID, obj)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
-      else {
-        res.send()
-        return LogModel.createLog(
-          db,
-          req.token ? req.token.userID : null,
-          req.headers['user-agent'],
-          req.ip,
-          `Update studentList : _id = ${studentListID}`,
-          Date.now(),
-          1,
-          req.body,
-          'studentList',
-          studentListID,
-        )
-      }
+  if (carStopIDs !== undefined) obj.carStopIDs = carStopIDs
+  let p = Promise.resolve()
+  if (studentIDs !== undefined && carStopIDs === undefined) {
+    p = StudentModel.getStudentsCarStopIDs(db, studentIDs)
+      .then((v) => {
+        obj.carStopIDs = v
+      })
+  }
+  p
+    .then(() => {
+      StudentListModel.updateStudentList(db, studentListID, obj)
+        .then(({ matchedCount }) => {
+          if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+          else {
+            res.send()
+            return LogModel.createLog(
+              db,
+              req.token ? req.token.userID : null,
+              req.headers['user-agent'],
+              req.ip,
+              `Update studentList : _id = ${studentListID}`,
+              Date.now(),
+              1,
+              req.body,
+              'studentList',
+              studentListID,
+            )
+          }
+        })
     })
     .catch(next)
 })

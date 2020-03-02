@@ -5,13 +5,15 @@ const { ObjectID } = require('mongodb')
  * @param {Object} db
  * @param {string} name
  * @param {Array} [studentIDs=[]]
+ * @param {Array} carStopIDs
  * @returns {Object}
  */
-function createStudentList (db, name, studentIDs = []) {
+function createStudentList (db, name, studentIDs = [], carStopIDs) {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
     .insertOne({
       name,
       studentIDs,
+      carStopIDs,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -33,10 +35,10 @@ function countStudentLists (db) {
  * Get studentLists.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='student']
+ * @param {string} [extra='student,carStop']
  * @returns {Object}
  */
-function getStudentLists (db, page, extra = 'student') {
+function getStudentLists (db, page, extra = 'student,carStop') {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
     .find({ isDeleted: false })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -53,10 +55,10 @@ function getStudentLists (db, page, extra = 'student') {
  * Get studentList by id.
  * @param {Object} db
  * @param {string} studentListID
- * @param {string} [extra='student']
+ * @param {string} [extra='student,carStop']
  * @returns {Object}
  */
-function getStudentListByID (db, studentListID, extra = 'student') {
+function getStudentListByID (db, studentListID, extra = 'student,carStop') {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(studentListID) })
     .then((v) => {
@@ -70,10 +72,10 @@ function getStudentListByID (db, studentListID, extra = 'student') {
  * Get studentLists by ids.
  * @param {Object} db
  * @param {Array} studentListIDs
- * @param {string} [extra='student']
+ * @param {string} [extra='student,carStop']
  * @returns {Object}
  */
-function getStudentListsByIDs (db, studentListIDs, extra = 'student') {
+function getStudentListsByIDs (db, studentListIDs, extra = 'student,carStop') {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
     .find({ isDeleted: false, _id: { $in: studentListIDs } })
     .toArray()
@@ -96,17 +98,29 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let studentIDs = []
+    let carStopIDs = []
     docs.forEach((c) => {
       if (e.includes('student') && Array.isArray(c.studentIDs)) {
         studentIDs.push(...c.studentIDs.map(ObjectID))
       }
+      if (e.includes('carStop') && Array.isArray(c.carStopIDs)) {
+        carStopIDs.push(...c.carStopIDs.map(ObjectID))
+      }
     })
     let students
+    let carStops
     let arr = []
     if (studentIDs.length > 0) {
       let p = getStudentsByIDs(db, studentIDs)
         .then((v) => {
           students = v
+        })
+      arr.push(p)
+    }
+    if (carStopIDs.length > 0) {
+      let p = getCarStopsByIDs(db, carStopIDs)
+        .then((v) => {
+          carStops = v
         })
       arr.push(p)
     }
@@ -116,17 +130,27 @@ function addExtra (db, docs, extra) {
           if (students !== undefined && Array.isArray(c.studentIDs)) {
             c.students = c.studentIDs.map(e => students[e])
           }
+          if (carStops !== undefined && Array.isArray(c.carStopIDs)) {
+            c.carStops = c.carStopIDs.map(e => carStops[e])
+          }
         })
         return docs
       })
   }
   let doc = docs
-  let { studentIDs } = doc
+  let { studentIDs, carStopIDs } = doc
   let arr = []
   if (e.includes('student') && Array.isArray(studentIDs)) {
     let p = getStudentsByIDs(db, studentIDs.map(ObjectID))
       .then((v) => {
-        doc.students = doc.studentIDs.map(c => v[c])
+        doc.students = studentIDs.map(c => v[c])
+      })
+    arr.push(p)
+  }
+  if (e.includes('carStop') && Array.isArray(carStopIDs)) {
+    let p = getCarStopsByIDs(db, carStopIDs.map(ObjectID))
+      .then((v) => {
+        doc.carStops = carStopIDs.map(c => v[c])
       })
     arr.push(p)
   }
@@ -221,3 +245,4 @@ module.exports = {
 }
 
 const { getStudentsByIDs } = require('./Student')
+const { getCarStopsByIDs } = require('./CarStop')
