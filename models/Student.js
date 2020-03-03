@@ -340,6 +340,20 @@ function getStudentsCarStopIDs (db, studentIDs) {
     )
 }
 
+/**
+ * Update students delete carStop.
+ * @param {Object} db
+ * @param {string} carStopID
+ * @returns {Object}
+ */
+function updateStudentsDeleteCarStop (db, carStopID) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .updateMany(
+      { isDeleted: false, carStopID },
+      { $set: { updatedTime: Date.now(), carStopID: null } },
+    )
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -353,6 +367,7 @@ module.exports = {
   deleteStudentByUser,
   deleteStudentsByClass,
   getStudentsCarStopIDs,
+  updateStudentsDeleteCarStop,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
