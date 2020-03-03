@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
+const { ObjectID } = require('mongodb')
 const StudentListModel = require('./../models/StudentList')
 const StudentModel = require('./../models/Student')
 const LogModel = require('./../models/Log')
@@ -169,10 +170,24 @@ router.get('/:studentListID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 router.put('/:studentListID([0-9a-fA-F]{24})/studentIDs/add', (req, res, next) => {
   let { studentListID } = req.params
   let { studentIDs } = req.body
+  if (!Array.isArray(studentIDs)) studentIDs = [studentIDs]
   let { db } = req.app.locals
-  StudentModel.getStudentsCarStopIDs(db, studentIDs)
-    .then((carStopIDs) => {
-      return StudentListModel.updateStudentListAddStudentIDsCarStopIDs(db, studentListID, studentIDs, carStopIDs)
+  Promise.all([
+    StudentListModel.getStudentListByID(db, studentListID, null),
+    StudentModel.getStudentsByIDs(db, studentIDs.map(ObjectID), null),
+  ])
+    .then(([v, students]) => {
+      if (v === null) return res.status(404).send({ message: 'Not Found' })
+      let obj = { studentIDs: v.studentIDs, carStopIDs: v.carStopIDs }
+      studentIDs.forEach((e) => {
+        if (!obj.studentIDs.includes(e)) {
+          obj.studentIDs.push(e)
+          if (students[e] != null && students[e].carStopID != null && !obj.carStopIDs.includes(students[e].carStopID)) {
+            obj.carStopIDs.push(students[e].carStopID)
+          }
+        }
+      })
+      return StudentListModel.updateStudentList(db, studentListID, obj)
         .then(({ matchedCount }) => {
           if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
           else {
