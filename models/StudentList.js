@@ -286,6 +286,20 @@ function updateStudentListsReplaceCarStop (db, studentID, carStopID, newCarStopI
     })
 }
 
+/**
+ * Update studentLists remove carStop.
+ * @param {Object} db
+ * @param {string} carStopID
+ * @returns {Object}
+ */
+function updateStudentListsRemoveCarStop (db, carStopID) {
+  return db.collection(process.env.STUDENT_LIST_COLLECTION)
+    .updateMany(
+      { isDeleted: false, carStopIDs: carStopID },
+      { $set: { updatedTime: Date.now() }, $pullAll: { carStopIDs: [carStopID] } },
+    )
+}
+
 module.exports = {
   createStudentList,
   countStudentLists,
@@ -298,6 +312,7 @@ module.exports = {
   updateStudentListsRemoveStudentIDsCarStopIDs,
   deleteStudentList,
   updateStudentListsReplaceCarStop,
+  updateStudentListsRemoveCarStop,
 }
 
 const { getStudentsByIDs } = require('./Student')
