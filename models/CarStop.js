@@ -93,11 +93,18 @@ function updateCarStop (db, carStopID, obj) {
  * @returns {Object}
  */
 function deleteCarStop (db, carStopID) {
-  return db.collection(process.env.CAR_STOP_COLLECTION)
+  let p = db.collection(process.env.CAR_STOP_COLLECTION)
     .updateOne(
       { isDeleted: false, _id: ObjectID(carStopID) },
       { $set: { isDeleted: true } },
     )
+  p.then(({ matchedCount }) => {
+    if (matchedCount === 1) {
+      updateStudentsDeleteCarStop(db, carStopID)
+      updateStudentListsRemoveCarStop(db, carStopID)
+    }
+  })
+  return p
 }
 
 /**
@@ -252,3 +259,6 @@ module.exports = {
   getCarStopsBySearch,
   getCarStopsByTypeInRoute,
 }
+
+const { updateStudentsDeleteCarStop } = require('./Student')
+const { updateStudentListsRemoveCarStop } = require('./StudentList')
