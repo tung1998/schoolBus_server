@@ -52,13 +52,14 @@ function countStudents (db) {
  * @param {Object} db
  * @param {number} page
  * @param {string} [extra='user,class,carStop']
+ * @param {number} limit
  * @returns {Object}
  */
-function getStudents (db, page, extra = 'user,class,carStop') {
+function getStudents (db, page, extra = 'user,class,carStop', limit) {
   return db.collection(process.env.STUDENT_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []

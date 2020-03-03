@@ -45,12 +45,13 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra } = req.query
+  if (limit !== undefined) limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
-    StudentModel.getStudents(db, page, extra)
+    StudentModel.getStudents(db, page, extra, limit)
       .then((data) => {
         result.data = data
         return StudentModel.countStudents(db)
