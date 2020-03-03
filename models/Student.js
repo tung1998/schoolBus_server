@@ -276,7 +276,7 @@ function deleteStudent (db, studentID) {
     if (updatedExisting) {
       deleteUser(db, value.userID, false)
       deleteStudentTrips(db, 'studentID', studentID)
-      updateStudentListsRemoveStudentIDsCarStopIDs(db, studentID, value.carStopID)
+      updateStudentListsRemoveStudentCarStop(db, studentID, value.carStopID)
     }
   })
   return p
@@ -299,7 +299,7 @@ function deleteStudentByUser (db, userID) {
     .then(({ lastErrorObject: { updatedExisting }, value }) => {
       if (updatedExisting) {
         deleteStudentTrips(db, 'studentID', String(value._id))
-        updateStudentListsRemoveStudentIDsCarStopIDs(db, String(value._id), value.carStopID)
+        updateStudentListsRemoveStudentCarStop(db, String(value._id), value.carStopID)
       }
     })
 }
@@ -374,4 +374,4 @@ const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = requi
 const { getClassesByIDs, getClassByID } = require('./Class')
 const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
 const { deleteStudentTrips } = require('./StudentTrip')
-const { updateStudentListsRemoveStudentIDsCarStopIDs, updateStudentListsReplaceCarStop } = require('./StudentList')
+const { updateStudentListsRemoveStudentCarStop, updateStudentListsReplaceCarStop } = require('./StudentList')

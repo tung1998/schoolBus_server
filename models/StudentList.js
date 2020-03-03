@@ -211,21 +211,26 @@ function updateStudentListRemoveStudentIDs (db, studentListID, studentIDs) {
 }
 
 /**
- * Update studentLists remove studentIDs carStopIDs.
+ * Update studentLists remove student carStop.
  * @param {Object} db
  * @param {string} studentID
  * @param {string} carStopID
  * @returns {Object}
  */
-function updateStudentListsRemoveStudentIDsCarStopIDs (db, studentID, carStopID) {
+function updateStudentListsRemoveStudentCarStop (db, studentID, carStopID) {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
-    .find({ isDeleted: false, studentIDs: studentID })
+    .find({ isDeleted: false, studentIDs: { $elemMatch: { $eq: studentID } } })
     .toArray()
     .then(v => addExtra(db, v, 'student'))
     .then((v) => {
       v.forEach(({ _id, studentIDs, students, carStopIDs }) => {
         studentIDs.splice(studentIDs.indexOf(studentID), 1)
-        if (carStopID !== null && !students.some(e => e != null && e.carStopID === carStopID && String(e._id) !== studentID) && carStopIDs.includes(carStopID)) {
+        if (
+          carStopID !== null
+          && !students.some(e => e != null && e.carStopID === carStopID && String(e._id) !== studentID)
+          && Array.isArray(carStopIDs)
+          && carStopIDs.includes(carStopID)
+        ) {
           carStopIDs.splice(carStopIDs.indexOf(carStopID), 1)
         }
         db.collection(process.env.STUDENT_LIST_COLLECTION)
@@ -261,13 +266,13 @@ function deleteStudentList (db, studentListID) {
  */
 function updateStudentListsReplaceCarStop (db, studentID, carStopID, newCarStopID) {
   return db.collection(process.env.STUDENT_LIST_COLLECTION)
-    .find({ isDeleted: false, studentIDs: studentID, carStopIDs: { $elemMatch: { $exists: true } } })
+    .find({ isDeleted: false, studentIDs: { $elemMatch: { $eq: studentID } }, carStopIDs: { $ne: null } })
     .toArray()
     .then(v => addExtra(db, v, 'student'))
     .then((v) => {
       v.forEach(({ _id, students, carStopIDs }) => {
         let b = false
-        if (carStopID !== null && !students.some(e => e.carStopID === carStopID) && carStopIDs.includes(carStopID)) {
+        if (carStopID !== null && !students.some(e => e != null && e.carStopID === carStopID) && carStopIDs.includes(carStopID)) {
           b = true
           carStopIDs.splice(carStopIDs.indexOf(carStopID), 1)
         }
@@ -309,7 +314,7 @@ module.exports = {
   updateStudentList,
   updateStudentListAddStudentIDsCarStopIDs,
   updateStudentListRemoveStudentIDs,
-  updateStudentListsRemoveStudentIDsCarStopIDs,
+  updateStudentListsRemoveStudentCarStop,
   deleteStudentList,
   updateStudentListsReplaceCarStop,
   updateStudentListsRemoveCarStop,
