@@ -331,14 +331,20 @@ function deleteStudentsByClass (db, classID) {
  */
 function getStudentsCarStopIDs (db, studentIDs) {
   return db.collection(process.env.STUDENT_COLLECTION)
-    .distinct(
-      'carStopID',
-      {
-        isDeleted: false,
-        _id: Array.isArray(studentIDs) ? { $in: studentIDs.map(ObjectID) } : ObjectID(studentIDs),
-        carStopID: { $ne: null },
-      },
-    )
+    .find({ isDeleted: false, _id: { $in: studentIDs.map(ObjectID) }, carStopID: { $ne: null } })
+    .project({ _id: 0, carStopID: 1 })
+    .toArray()
+    .then((v) => {
+      let t = {}
+      let carStopIDs = []
+      v.forEach(({ carStopID }) => {
+        if (!(carStopID in t)) {
+          t[carStopID] = null
+          carStopIDs.push(carStopID)
+        }
+      })
+      return carStopIDs
+    })
 }
 
 /**
