@@ -276,8 +276,8 @@ function deleteStudent (db, studentID) {
   p.then(({ lastErrorObject: { updatedExisting }, value }) => {
     if (updatedExisting) {
       deleteUser(db, value.userID, false)
-      deleteStudentTrips(db, 'studentID', studentID)
       updateStudentListsRemoveStudentCarStop(db, studentID, value.carStopID)
+      updateTripsRemoveStudent(db, studentID)
     }
   })
   return p
@@ -299,8 +299,8 @@ function deleteStudentByUser (db, userID) {
     )
     .then(({ lastErrorObject: { updatedExisting }, value }) => {
       if (updatedExisting) {
-        deleteStudentTrips(db, 'studentID', String(value._id))
         updateStudentListsRemoveStudentCarStop(db, String(value._id), value.carStopID)
+        updateTripsRemoveStudent(db, String(value._id))
       }
     })
 }
@@ -380,5 +380,5 @@ module.exports = {
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
 const { getClassesByIDs, getClassByID } = require('./Class')
 const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
-const { deleteStudentTrips } = require('./StudentTrip')
 const { updateStudentListsRemoveStudentCarStop, updateStudentListsReplaceCarStop } = require('./StudentList')
+const { updateTripsRemoveStudent } = require('./Trip')
