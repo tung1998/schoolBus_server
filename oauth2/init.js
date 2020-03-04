@@ -92,7 +92,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Module(/**)?', '/Log(/**)?', '/Administrator(/**)?'],
+    routes: ['/Module(/**)?', '/Log(/**)?', '/Administrator(/**)?', '/TripLocation(/**)?', '/CarStopTrip(/**)?', '/SMS(/**)?'],
     methods: ['get', 'post', 'put', 'delete'],
   }).defend({
     routes: ['/School'],
