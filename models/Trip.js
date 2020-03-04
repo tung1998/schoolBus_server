@@ -459,6 +459,20 @@ function getTripsByTime (db, startTime, endTime, extra = 'car,driver,nanny,route
     })
 }
 
+/**
+ * Update trips remove student.
+ * @param {Object} db
+ * @param {string} studentID
+ * @returns {Object}
+ */
+function updateTripsRemoveStudent (db, studentID) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateMany(
+      { isDeleted: false, students: { $elemMatch: { studentID } } },
+      { $set: { updatedTime: Date.now() }, $pull: { students: { studentID } } },
+    )
+}
+
 module.exports = {
   createTrip,
   countTrips,
@@ -474,6 +488,7 @@ module.exports = {
   updateTripStudentStatus,
   deleteTrip,
   getTripsByTime,
+  updateTripsRemoveStudent,
 }
 
 const { getCarsByIDs, getCarByID } = require('./Car')
