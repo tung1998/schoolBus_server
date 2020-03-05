@@ -361,6 +361,18 @@ function updateStudentsDeleteCarStop (db, carStopID) {
     )
 }
 
+/**
+ * Count students by class.
+ * @param {Object} db
+ * @param {string} classID
+ * @returns {Object}
+ */
+function countStudentsByClass (db, classID) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, classID })
+    .count()
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -375,6 +387,7 @@ module.exports = {
   deleteStudentsByClass,
   getStudentsCarStopIDs,
   updateStudentsDeleteCarStop,
+  countStudentsByClass,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
