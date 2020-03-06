@@ -473,6 +473,22 @@ function updateTripsRemoveStudent (db, studentID) {
     )
 }
 
+/**
+ * Update trip student image.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {string} studentID
+ * @param {string} image
+ * @returns {Object}
+ */
+function updateTripStudentImage (db, tripID, studentID, image) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(tripID), 'students.studentID': studentID },
+      { $set: { updatedTime: Date.now(), 'students.$.image': image } },
+    )
+}
+
 module.exports = {
   createTrip,
   countTrips,
@@ -489,6 +505,7 @@ module.exports = {
   deleteTrip,
   getTripsByTime,
   updateTripsRemoveStudent,
+  updateTripStudentImage,
 }
 
 const { getCarsByIDs, getCarByID } = require('./Car')

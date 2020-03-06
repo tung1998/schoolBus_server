@@ -233,4 +233,30 @@ router.get('/byTime', (req, res, next) => {
     .catch(next)
 })
 
+router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/image', (req, res, next) => {
+  let { tripID, studentID } = req.params
+  let { image } = req.body
+  let { db } = req.app.locals
+  TripModel.updateTripStudentImage(db, tripID, studentID, image)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update trip student image : _id = ${tripID} studentID = ${studentID}`,
+          Date.now(),
+          1,
+          req.body,
+          'trip',
+          tripID,
+        )
+      }
+    })
+    .catch(next)
+})
+
 module.exports = router
