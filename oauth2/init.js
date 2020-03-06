@@ -349,4 +349,24 @@ function initOAuth2 (db, app) {
     routes: ['/Car/:carID([0-9a-fA-F]{24})'],
     method: ['put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+    || req.token.type === USER_TYPE_DRIVER
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/CarFuel(/**)?'],
+    method: ['get', 'post', 'put', 'delete'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+    || req.token.type === USER_TYPE_DRIVER
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/CarMaintenance(/**)?'],
+    method: ['get', 'post', 'put', 'delete'],
+  })
 }
