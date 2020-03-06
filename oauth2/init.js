@@ -86,7 +86,7 @@ function initOAuth2 (db, app) {
     routes: ['/Info(/**)?', '/GPS(/**)?', '/Token(/**)?', '/Notification(/**)?'],
     method: ['get', 'post', 'put', 'delete'],
   }).defend({
-    routes: ['/CarModel', '/CarModel/:carModelID([0-9a-fA-F]{24})'],
+    routes: ['/CarModel', '/CarModel/:page(\\d+)', '/CarModel/:carModelID([0-9a-fA-F]{24})'],
     method: ['get'],
   }).defend({
     routes: ['/Route', '/Route/:page(\\d+)', '/Route/:routeID([0-9a-fA-F]{24})'],
@@ -307,7 +307,7 @@ function initOAuth2 (db, app) {
       ? next()
       : cancel()
   }).defend({
-    routes: ['/CarModel/:page(\\d+)', '/CarModel/Log', '/CarModel/:carModelID([0-9a-fA-F]{24})/Log'],
+    routes: ['/CarModel/Log', '/CarModel/:carModelID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
   }).defend({
     routes: ['/CarModel'],
