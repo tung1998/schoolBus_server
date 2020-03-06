@@ -275,4 +275,19 @@ function initOAuth2 (db, app) {
     routes: ['/Nanny/:nannyID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/Driver', '/Driver/:page(\\d+)', '/Driver/Log', '/Driver/:driverID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Driver'],
+    method: ['post'],
+  }).defend({
+    routes: ['/Driver/:driverID([0-9a-fA-F]{24})'],
+    method: ['get', 'put', 'delete'],
+  })
 }
