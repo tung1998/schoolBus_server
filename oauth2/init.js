@@ -91,6 +91,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Route', '/Route/:page(\\d+)', '/Route/:routeID([0-9a-fA-F]{24})'],
     method: ['get'],
+  }).defend({
+    routes: ['/Car', '/Car/:page(\\d+)', '/Car/:carID([0-9a-fA-F]{24})'],
+    method: ['get'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
@@ -329,6 +332,21 @@ function initOAuth2 (db, app) {
     method: ['post'],
   }).defend({
     routes: ['/Route/:routeID([0-9a-fA-F]{24})'],
+    method: ['put', 'delete'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/Car/Log', '/Car/:carID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Car'],
+    method: ['post'],
+  }).defend({
+    routes: ['/Car/:carID([0-9a-fA-F]{24})'],
     method: ['put', 'delete'],
   })
 }
