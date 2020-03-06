@@ -260,4 +260,19 @@ function initOAuth2 (db, app) {
     routes: ['/Student/:studentID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/Nanny', '/Nanny/:page(\\d+)', '/Nanny/Log', '/Nanny/:nannyID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Nanny'],
+    method: ['post'],
+  }).defend({
+    routes: ['/Nanny/:nannyID([0-9a-fA-F]{24})'],
+    method: ['get', 'put', 'delete'],
+  })
 }
