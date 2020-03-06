@@ -245,6 +245,27 @@ function deleteParentByUser (db, userID) {
     )
 }
 
+/**
+ * Delete parent by student.
+ * @param {Object} db
+ * @param {string} studentID
+ * @returns {Object}
+ */
+function deleteParentByStudent (db, studentID) {
+  return db.collection(process.env.PARENT_COLLECTION)
+    .findAndModify(
+      { isDeleted: false, studentID },
+      null,
+      { $set: { isDeleted: true } },
+      { fields: { _id: 0, userID: 1 } },
+    )
+    .then(({ lastErrorObject: { updatedExisting }, value }) => {
+      if (updatedExisting) {
+        deleteUser(db, value.userID, false)
+      }
+    })
+}
+
 module.exports = {
   createParent,
   countParents,
@@ -255,6 +276,7 @@ module.exports = {
   updateParent,
   deleteParent,
   deleteParentByUser,
+  deleteParentByStudent,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
