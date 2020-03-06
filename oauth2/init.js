@@ -82,6 +82,11 @@ function initOAuth2 (db, app) {
     method: ['get', 'post', 'put', 'delete'],
   })
 
+  soas2.defend({
+    routes: ['/Info(/**)?', '/GPS(/**)?', '/Token(/**)?', '/Notification(/**)?'],
+    method: ['get', 'post', 'put', 'delete'],
+  })
+
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
       return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
