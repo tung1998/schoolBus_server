@@ -99,6 +99,15 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/CarStop', '/CarStop/:page(\\d+)', '/CarStop/:carStopID([0-9a-fA-F]{24})'],
     method: ['get'],
+  }).defend({
+    routes: ['/User'],
+    method: ['post'],
+  }).defend({
+    routes: ['/User/byAccessToken', '/User/current'],
+    method: ['get'],
+  }).defend({
+    routes: ['/User/password'],
+    method: ['put'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
@@ -134,6 +143,31 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Parent', '/Parent/:page(\\d+)', '/Parent/Log', '/Parent/:parentID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+    || req.token.type === USER_TYPE_NANNY
+    || req.token.type === USER_TYPE_DRIVER
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/User', '/User/:page(\\d+)', '/User/:userID([0-9a-fA-F]{24})', '/User/byPhone/', '/User/ByEmail', '/User/Log', '/User/:userID([0-9a-fA-F]{24})/Log'],
+    methods: ['get'],
+  }).defend({
+    routes: ['/User/:userID([0-9a-fA-F]{24})', '/User/:userID([0-9a-fA-F]{24})/block', '/User/:userID([0-9a-fA-F]{24})/unblock'],
+    methods: ['put'],
+  }).defend({
+    routes: ['/User/:userID([0-9a-fA-F]{24})'],
+    methods: ['delete'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/User/:userID([0-9a-fA-F]{24})/password'],
+    methods: ['put'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
