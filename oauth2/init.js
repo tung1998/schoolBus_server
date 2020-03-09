@@ -94,6 +94,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Car', '/Car/:page(\\d+)', '/Car/:carID([0-9a-fA-F]{24})'],
     method: ['get'],
+  }).defend({
+    routes: ['/CarStop', '/CarStop/:page(\\d+)', '/CarStop/:carStopID([0-9a-fA-F]{24})'],
+    method: ['get'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
@@ -368,5 +371,20 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/CarMaintenance(/**)?'],
     method: ['get', 'post', 'put', 'delete'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/CarStop/Log', '/CarStop/:carStopID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/CarStop'],
+    method: ['post'],
+  }).defend({
+    routes: ['/CarStop/:carStopID([0-9a-fA-F]{24})'],
+    method: ['put', 'delete'],
   })
 }
