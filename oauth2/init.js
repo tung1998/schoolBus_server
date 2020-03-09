@@ -449,4 +449,28 @@ function initOAuth2 (db, app) {
     routes: ['/ParentRequest(/**)?'],
     method: ['get', 'post', 'put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+    || req.token.type === USER_TYPE_PARENT
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/Feedback'],
+    method: ['post'],
+  }).defend({
+    routes: ['/Feedback/:feedbackID([0-9a-fA-F]{24})'],
+    method: ['get', 'put', 'delete'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/Feedback', '/Feedback/:page(\\d+)', '/Feedback/Log', '/Feedback/:feedbackID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Feedback/:feedbackID([0-9a-fA-F]{24})/response'],
+    method: ['put'],
+  })
 }
