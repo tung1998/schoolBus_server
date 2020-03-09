@@ -387,4 +387,13 @@ function initOAuth2 (db, app) {
     routes: ['/CarStop/:carStopID([0-9a-fA-F]{24})'],
     method: ['put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/StudentList(/**)?'],
+    method: ['get', 'post', 'put', 'delete'],
+  })
 }
