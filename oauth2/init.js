@@ -5,6 +5,7 @@ const AdministratorModel = require('./../models/Administrator')
 const ClassModel = require('./../models/Class')
 const TeacherModel = require('./../models/Teacher')
 const StudentModel = require('./../models/Student')
+const ParentModel = require('./../models/Parent')
 
 const CANCEL_MESSAGE = 'Authentication is fail!'
 
@@ -128,6 +129,9 @@ function initOAuth2 (db, app) {
     method: ['get'],
   }).defend({
     routes: ['/Student', '/Student/:page(\\d+)', '/Student/Log', '/Student/:studentID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Parent', '/Parent/:page(\\d+)', '/Parent/Log', '/Parent/:parentID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
   })
 
@@ -275,6 +279,36 @@ function initOAuth2 (db, app) {
     return cancel()
   }).defend({
     routes: ['/Student/:studentID([0-9a-fA-F]{24})'],
+    method: ['get', 'put', 'delete'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return next()
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Parent'],
+    method: ['post'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return ParentModel.getParentByID(db, req.params.parentID, 'student')
+              .then((c) => {
+                if (c !== null && c.student != null && c.student.class != null && c.student.class.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Parent/:parentID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
   })
 
