@@ -6,6 +6,7 @@ const ClassModel = require('./../models/Class')
 const TeacherModel = require('./../models/Teacher')
 const StudentModel = require('./../models/Student')
 const ParentModel = require('./../models/Parent')
+const TripModel = require('./../models/Trip')
 
 const CANCEL_MESSAGE = 'Authentication is fail!'
 
@@ -471,6 +472,52 @@ function initOAuth2 (db, app) {
     method: ['get'],
   }).defend({
     routes: ['/Feedback/:feedbackID([0-9a-fA-F]{24})/response'],
+    method: ['put'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/Trip', '/Trip/:page(\\d+)', '/Trip/byTime', '/Trip/Log', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Trip'],
+    method: ['post'],
+  }).defend({
+    routes: ['/Trip/:tripID([0-9a-fA-F]{24})'],
+    method: ['delete'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return next()
+    }
+    if (req.token.type === USER_TYPE_NANNY) {
+      return TripModel.getTripByID(db, req.params.tripID, 'nanny')
+        .then((v) => {
+          if (v !== null && v.nanny != null && v.nanny.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_DRIVER) {
+      return TripModel.getTripByID(db, req.params.tripID, 'driver')
+        .then((v) => {
+          if (v !== null && v.driver != null && v.driver.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Trip/:tripID([0-9a-fA-F]{24})'],
+    method: ['get'],
+  }).defend({
+    routes: [
+      '/Trip/:tripID([0-9a-fA-F]{24})',
+      '/Trip/:tripID([0-9a-fA-F]{24})/status',
+      '/Trip/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/status',
+      '/Trip/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/image',
+    ],
     method: ['put'],
   })
 }
