@@ -439,4 +439,14 @@ function initOAuth2 (db, app) {
     routes: ['/StudentTrip(/**)?'],
     method: ['get', 'post', 'put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+    || req.token.type === USER_TYPE_PARENT
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/ParentRequest(/**)?'],
+    method: ['get', 'post', 'put', 'delete'],
+  })
 }
