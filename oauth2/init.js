@@ -396,4 +396,13 @@ function initOAuth2 (db, app) {
     routes: ['/StudentList(/**)?'],
     method: ['get', 'post', 'put', 'delete'],
   })
+
+  soas2.layerAnd((req, next, cancel) => {
+    return req.token.type === USER_TYPE_ADMINISTRATOR
+      ? next()
+      : cancel()
+  }).defend({
+    routes: ['/StudentTrip(/**)?'],
+    method: ['get', 'post', 'put', 'delete'],
+  })
 }
