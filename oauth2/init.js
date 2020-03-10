@@ -112,7 +112,7 @@ function initOAuth2 (db, app) {
 
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           return cancel()
@@ -172,7 +172,7 @@ function initOAuth2 (db, app) {
 
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL && v.schoolID === req.params.schoolID) return next()
@@ -187,7 +187,7 @@ function initOAuth2 (db, app) {
 
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
@@ -207,11 +207,11 @@ function initOAuth2 (db, app) {
   })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
-            return ClassModel.getClassByID(db, req.params.classID, null)
+            return ClassModel.getClassByID(req.app.locals.db, req.params.classID, null)
               .then((c) => {
                 if (c !== null && c.schoolID === v.schoolID) return next()
                 return cancel()
@@ -228,7 +228,7 @@ function initOAuth2 (db, app) {
 
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
@@ -248,11 +248,11 @@ function initOAuth2 (db, app) {
   })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
-            return TeacherModel.getTeacherByID(db, req.params.teacherID, null)
+            return TeacherModel.getTeacherByID(req.app.locals.db, req.params.teacherID, null)
               .then((c) => {
                 if (c !== null && c.schoolID === v.schoolID) return next()
                 return cancel()
@@ -269,11 +269,11 @@ function initOAuth2 (db, app) {
 
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
-            return ClassModel.getClassByID(db, req.query.classID, null)
+            return ClassModel.getClassByID(req.app.locals.db, req.query.classID, null)
               .then((c) => {
                 if (c !== null && c.schoolID === v.schoolID) return next()
                 return cancel()
@@ -298,11 +298,11 @@ function initOAuth2 (db, app) {
   })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
-            return StudentModel.getStudentByID(db, req.params.studentID, 'class')
+            return StudentModel.getStudentByID(req.app.locals.db, req.params.studentID, 'class')
               .then((c) => {
                 if (c !== null && c.class != null && c.class.schoolID === v.schoolID) return next()
                 return cancel()
@@ -328,11 +328,11 @@ function initOAuth2 (db, app) {
   })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(db, req.token.userID, null)
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
-            return ParentModel.getParentByID(db, req.params.parentID, 'student')
+            return ParentModel.getParentByID(req.app.locals.db, req.params.parentID, 'student')
               .then((c) => {
                 if (c !== null && c.student != null && c.student.class != null && c.student.class.schoolID === v.schoolID) return next()
                 return cancel()
@@ -528,14 +528,14 @@ function initOAuth2 (db, app) {
       return next()
     }
     if (req.token.type === USER_TYPE_NANNY) {
-      return TripModel.getTripByID(db, req.params.tripID, 'nanny')
+      return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'nanny')
         .then((v) => {
           if (v !== null && v.nanny != null && v.nanny.userID === req.token.userID) return next()
           return cancel()
         })
     }
     if (req.token.type === USER_TYPE_DRIVER) {
-      return TripModel.getTripByID(db, req.params.tripID, 'driver')
+      return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'driver')
         .then((v) => {
           if (v !== null && v.driver != null && v.driver.userID === req.token.userID) return next()
           return cancel()
