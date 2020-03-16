@@ -308,6 +308,18 @@ function getUserByAccessToken (db, accessToken) {
     })
 }
 
+/**
+ * Check user is super admin.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function checkUserIsSuperAdmin (db, userID) {
+  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
+    .findOne({ isDeleted: false, userID, adminType: 0 }, { fields: { _id: 1 } })
+    .then(v => v !== null)
+}
+
 module.exports = {
   createUser,
   countUsers,
@@ -323,6 +335,7 @@ module.exports = {
   getUserByPhone,
   getUserByEmail,
   getUserByAccessToken,
+  checkUserIsSuperAdmin,
 }
 
 const { deleteAdministratorByUser } = require('./Administrator')

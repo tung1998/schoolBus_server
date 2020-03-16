@@ -292,4 +292,12 @@ router.get('/current', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/:userID([0-9a-fA-F]{24})/isSuperAdmin', (req, res, next) => {
+  let { db } = req.app.locals
+  let { userID } = req.params
+  UserModel.checkUserIsSuperAdmin(db, userID)
+    .then((v) => res.send(v))
+    .catch(next)
+})
+
 module.exports = router
