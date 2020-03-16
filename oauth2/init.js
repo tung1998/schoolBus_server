@@ -135,7 +135,7 @@ function initOAuth2 (db, app) {
     routes: ['/Class/Log', '/Class/:classID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
   }).defend({
-    routes: ['/Teacher', '/Teacher/:page(\\d+)', '/Teacher/Log', '/Teacher/:teacherID([0-9a-fA-F]{24})/Log'],
+    routes: ['/Teacher/Log', '/Teacher/:teacherID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
   }).defend({
     routes: ['/Student', '/Student/:page(\\d+)', '/Student/Log', '/Student/:studentID([0-9a-fA-F]{24})/Log'],
@@ -270,7 +270,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Teacher/bySchool'],
+    routes: ['/Teacher', '/Teacher/:page(\\d+)', '/Teacher/bySchool'],
     method: ['get'],
   }).defend({
     routes: ['/Teacher'],
