@@ -284,6 +284,18 @@ function deleteTeachersBySchool (db, schoolID) {
     })
 }
 
+/**
+ * Count teachers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function countTeachersBySchool (db, schoolID) {
+  return db.collection(process.env.TEACHER_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .count()
+}
+
 module.exports = {
   createTeacher,
   countTeachers,
@@ -296,6 +308,7 @@ module.exports = {
   deleteTeacher,
   deleteTeacherByUser,
   deleteTeachersBySchool,
+  countTeachersBySchool,
 }
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
