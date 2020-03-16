@@ -252,6 +252,39 @@ function deleteAdministratorByUser (db, userID) {
     )
 }
 
+/**
+ * Get administrators by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} page
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getAdministratorsBySchool (db, schoolID, page, extra = 'user,school') {
+  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
+    .find({ isDeleted: false, schoolID, adminType: ADMINISTRATOR_TYPE_SCHOOL })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Count administrators by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function countAdministratorsBySchool (db, schoolID) {
+  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
+    .find({ isDeleted: false, schoolID, adminType: ADMINISTRATOR_TYPE_SCHOOL })
+    .count()
+}
+
 module.exports = {
   createAdministrator,
   countAdministrators,
@@ -262,6 +295,8 @@ module.exports = {
   updateAdministrator,
   deleteAdministrator,
   deleteAdministratorByUser,
+  getAdministratorsBySchool,
+  countAdministratorsBySchool,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')

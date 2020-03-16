@@ -120,7 +120,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Module(/**)?', '/Log(/**)?', '/Administrator(/**)?', '/TripLocation(/**)?', '/CarStopTrip(/**)?', '/SMS(/**)?', '/Config(/**)?'],
+    routes: ['/Module(/**)?', '/Log(/**)?', '/TripLocation(/**)?', '/CarStopTrip(/**)?', '/SMS(/**)?', '/Config(/**)?'],
     methods: ['get', 'post', 'put', 'delete'],
   }).defend({
     routes: ['/School'],
@@ -143,6 +143,12 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Parent', '/Parent/:page(\\d+)', '/Parent/Log', '/Parent/:parentID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
+  }).defend({
+    routes: ['/Administrator/Log', '/Administrator/:administratorID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Administrator/:administratorID([0-9a-fA-F]{24})'],
+    method: ['delete'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
@@ -168,6 +174,30 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/User/:userID([0-9a-fA-F]{24})/password'],
     methods: ['put'],
+  })
+
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Administrator'],
+    method: ['post'],
+  }).defend({
+    routes: ['/Administrator', '/Administrator/:page(\\d+)'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Administrator/:administratorID([0-9a-fA-F]{24})'],
+    method: ['get', 'put'],
   })
 
   soas2.layerAnd((req, next, cancel) => {

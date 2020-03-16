@@ -6,6 +6,10 @@ const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
   let { username, password, image, name, phone, email, adminType, permission, schoolID } = req.body
+  if (req.schoolID !== undefined) {
+    schoolID = req.schoolID
+    adminType = 1
+  }
   let { db } = req.app.locals
   AdministratorModel.createAdministrator(db, username, password, image, name, phone, email, adminType, permission, schoolID)
     .then(({ insertedId }) => {
@@ -29,6 +33,20 @@ router.post('/', (req, res, next) => {
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, 1, extra)
+      .then((data) => {
+        result.data = data
+        return AdministratorModel.countAdministratorsBySchool(db, req.schoolID)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
   AdministratorModel.getAdministrators(db, 1, extra)
     .then((data) => {
@@ -49,6 +67,20 @@ router.get('/:page(\\d+)', (req, res, next) => {
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, page, extra)
+        .then((data) => {
+          result.data = data
+          return AdministratorModel.countAdministratorsBySchool(db, req.schoolID)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
     AdministratorModel.getAdministrators(db, page, extra)
       .then((data) => {
