@@ -91,12 +91,15 @@ function getClassesByIDs (db, classIDs, extra = 'school,teacher') {
  * Get classes by school.
  * @param {Object} db
  * @param {string} schoolID
+ * @param {number} page
  * @param {string} [extra='school,teacher']
  * @returns {Object}
  */
-function getClassesBySchool (db, schoolID, extra = 'school,teacher') {
+function getClassesBySchool (db, schoolID, page, extra = 'school,teacher') {
   return db.collection(process.env.CLASS_COLLECTION)
     .find({ isDeleted: false, schoolID })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []

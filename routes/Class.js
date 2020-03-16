@@ -156,7 +156,8 @@ router.get('/bySchool', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
   let schoolID = req.schoolID || req.query.schoolID
-  ClassModel.getClassesBySchool(db, schoolID, extra)
+  let page = Number(req.query.page) || 1
+  ClassModel.getClassesBySchool(db, schoolID, page, extra)
     .then(v => res.send(v))
     .catch(next)
 })
