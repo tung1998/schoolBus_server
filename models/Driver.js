@@ -18,9 +18,10 @@ const USER_TYPE_DRIVER = 4
  * @param {string} DLNumber
  * @param {number} DLIssueDate
  * @param {number} status
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createDriver (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status) {
+function createDriver (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status, schoolID) {
   return createUser(db, username, password, image, name, phone, email, USER_TYPE_DRIVER)
     .then(({ insertedId }) => (
       db.collection(process.env.DRIVER_COLLECTION)
@@ -33,6 +34,7 @@ function createDriver (db, username, password, image, name, phone, email, addres
           DLNumber,
           DLIssueDate,
           status,
+          schoolID,
           createdTime: Date.now(),
           updatedTime: Date.now(),
           isDeleted: false,
@@ -235,6 +237,39 @@ function deleteDriverByUser (db, userID) {
     )
 }
 
+/**
+ * Count drivers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function countDriversBySchool (db, schoolID) {
+  return db.collection(process.env.DRIVER_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .count()
+}
+
+/**
+ * Get drivers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} page
+ * @param {string} [extra='user']
+ * @returns {Object}
+ */
+function getDriversBySchool (db, schoolID, page, extra = 'user') {
+  return db.collection(process.env.DRIVER_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
 module.exports = {
   createDriver,
   countDrivers,
@@ -245,6 +280,8 @@ module.exports = {
   updateDriver,
   deleteDriver,
   deleteDriverByUser,
+  countDriversBySchool,
+  getDriversBySchool,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')

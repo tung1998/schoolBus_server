@@ -6,6 +6,7 @@ const ClassModel = require('./../models/Class')
 const TeacherModel = require('./../models/Teacher')
 const StudentModel = require('./../models/Student')
 const NannyModel = require('./../models/Nanny')
+const DriverModel = require('./../models/Driver')
 const ParentModel = require('./../models/Parent')
 const TripModel = require('./../models/Trip')
 
@@ -152,6 +153,9 @@ function initOAuth2 (db, app) {
     method: ['delete'],
   }).defend({
     routes: ['/Nanny/Log', '/Nanny/:nannyID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/Driver/Log', '/Driver/:driverID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
   })
 
@@ -423,15 +427,41 @@ function initOAuth2 (db, app) {
   })
 
   soas2.layerAnd((req, next, cancel) => {
-    return req.token.type === USER_TYPE_ADMINISTRATOR
-      ? next()
-      : cancel()
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
-    routes: ['/Driver', '/Driver/:page(\\d+)', '/Driver/Log', '/Driver/:driverID([0-9a-fA-F]{24})/Log'],
+    routes: ['/Driver', '/Driver/:page(\\d+)'],
     method: ['get'],
   }).defend({
     routes: ['/Driver'],
     method: ['post'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return DriverModel.getDriverByID(req.app.locals.db, req.params.driverID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
     routes: ['/Driver/:driverID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
