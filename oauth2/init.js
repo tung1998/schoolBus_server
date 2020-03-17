@@ -5,6 +5,7 @@ const AdministratorModel = require('./../models/Administrator')
 const ClassModel = require('./../models/Class')
 const TeacherModel = require('./../models/Teacher')
 const StudentModel = require('./../models/Student')
+const NannyModel = require('./../models/Nanny')
 const ParentModel = require('./../models/Parent')
 const TripModel = require('./../models/Trip')
 
@@ -149,6 +150,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Administrator/:administratorID([0-9a-fA-F]{24})'],
     method: ['delete'],
+  }).defend({
+    routes: ['/Nanny/Log', '/Nanny/:nannyID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
@@ -378,15 +382,41 @@ function initOAuth2 (db, app) {
   })
 
   soas2.layerAnd((req, next, cancel) => {
-    return req.token.type === USER_TYPE_ADMINISTRATOR
-      ? next()
-      : cancel()
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
-    routes: ['/Nanny', '/Nanny/:page(\\d+)', '/Nanny/Log', '/Nanny/:nannyID([0-9a-fA-F]{24})/Log'],
+    routes: ['/Nanny', '/Nanny/:page(\\d+)'],
     method: ['get'],
   }).defend({
     routes: ['/Nanny'],
     method: ['post'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return NannyModel.getNannyByID(req.app.locals.db, req.params.nannyID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
     routes: ['/Nanny/:nannyID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],

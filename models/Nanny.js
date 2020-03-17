@@ -233,6 +233,39 @@ function deleteNannyByUser (db, userID) {
     )
 }
 
+/**
+ * Count nannies by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function countNanniesBySchool (db, schoolID) {
+  return db.collection(process.env.NANNY_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .count()
+}
+
+/**
+ * Get nannies by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} page
+ * @param {string} [extra='user']
+ * @returns {Object}
+ */
+function getNanniesBySchool (db, schoolID, page, extra = 'user') {
+  return db.collection(process.env.NANNY_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
 module.exports = {
   createNanny,
   countNannies,
@@ -243,6 +276,8 @@ module.exports = {
   updateNanny,
   deleteNanny,
   deleteNannyByUser,
+  countNanniesBySchool,
+  getNanniesBySchool,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
