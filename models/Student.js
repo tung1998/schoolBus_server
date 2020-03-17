@@ -366,12 +366,12 @@ function updateStudentsDeleteCarStop (db, carStopID) {
 /**
  * Count students by class.
  * @param {Object} db
- * @param {string} classID
+ * @param {(string|Array)} classID
  * @returns {Object}
  */
 function countStudentsByClass (db, classID) {
   return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false, classID })
+    .find({ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID })
     .count()
 }
 
