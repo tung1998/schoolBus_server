@@ -53,10 +53,10 @@ function countNannies (db) {
  * Get nannies.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNannies (db, page, extra = 'user') {
+function getNannies (db, page, extra = 'user,school') {
   return db.collection(process.env.NANNY_COLLECTION)
     .find({ isDeleted: false })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -73,10 +73,10 @@ function getNannies (db, page, extra = 'user') {
  * Get nanny by id.
  * @param {Object} db
  * @param {string} nannyID
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNannyByID (db, nannyID, extra = 'user') {
+function getNannyByID (db, nannyID, extra = 'user,school') {
   return db.collection(process.env.NANNY_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(nannyID) })
     .then((v) => {
@@ -90,10 +90,10 @@ function getNannyByID (db, nannyID, extra = 'user') {
  * Get nanny by user.
  * @param {Object} db
  * @param {string} userID
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNannyByUser (db, userID, extra = 'user') {
+function getNannyByUser (db, userID, extra = 'user,school') {
   return db.collection(process.env.NANNY_COLLECTION)
     .findOne({ isDeleted: false, userID })
     .then((v) => {
@@ -107,10 +107,10 @@ function getNannyByUser (db, userID, extra = 'user') {
  * Get nannies by ids.
  * @param {Object} db
  * @param {Array} nannyIDs
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNanniesByIDs (db, nannyIDs, extra = 'user') {
+function getNanniesByIDs (db, nannyIDs, extra = 'user,school') {
   return db.collection(process.env.NANNY_COLLECTION)
     .find({ isDeleted: false, _id: { $in: nannyIDs } })
     .toArray()
@@ -133,12 +133,17 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let userIDs = []
-    docs.forEach(({ userID }) => {
+    let schoolIDs = []
+    docs.forEach(({ userID, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
       }
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
+      }
     })
     let users
+    let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -147,24 +152,41 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID } = c
+          let { userID, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
+          }
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { userID } = doc
+  let { userID, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
       .then((v) => {
         doc.user = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
       })
     arr.push(p)
   }
@@ -250,10 +272,10 @@ function countNanniesBySchool (db, schoolID) {
  * @param {Object} db
  * @param {string} schoolID
  * @param {number} page
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNanniesBySchool (db, schoolID, page, extra = 'user') {
+function getNanniesBySchool (db, schoolID, page, extra = 'user,school') {
   return db.collection(process.env.NANNY_COLLECTION)
     .find({ isDeleted: false, schoolID })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -281,3 +303,4 @@ module.exports = {
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
