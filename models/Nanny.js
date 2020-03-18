@@ -52,15 +52,16 @@ function countNannies (db) {
 /**
  * Get nannies.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNannies (db, page, extra = 'user,school') {
+function getNannies (db, limit, page, extra = 'user,school') {
   return db.collection(process.env.NANNY_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
@@ -271,15 +272,16 @@ function countNanniesBySchool (db, schoolID) {
  * Get nannies by school.
  * @param {Object} db
  * @param {string} schoolID
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNanniesBySchool (db, schoolID, page, extra = 'user,school') {
+function getNanniesBySchool (db, schoolID, limit, page, extra = 'user,school') {
   return db.collection(process.env.NANNY_COLLECTION)
     .find({ isDeleted: false, schoolID })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
