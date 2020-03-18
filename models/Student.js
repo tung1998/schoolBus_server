@@ -125,12 +125,15 @@ function getStudentsByIDs (db, studentIDs, extra = 'user,class,carStop') {
  * Get students by class.
  * @param {Object} db
  * @param {(string|Array)} classID
+ * @param {number} page
  * @param {string} [extra='user,class,carStop']
  * @returns {Object}
  */
-function getStudentsByClass (db, classID, extra = 'user,class,carStop') {
+function getStudentsByClass (db, classID, page, extra = 'user,class,carStop') {
   return db.collection(process.env.STUDENT_COLLECTION)
     .find({ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID })
+    .skip((process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []

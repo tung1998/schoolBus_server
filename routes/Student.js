@@ -163,7 +163,8 @@ router.get('/:studentID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 router.get('/byClass', (req, res, next) => {
   let { db } = req.app.locals
   let { classID, extra } = req.query
-  StudentModel.getStudentsByClass(db, classID, extra)
+  let page = Number(req.query.page) || 1
+  StudentModel.getStudentsByClass(db, classID, page, extra)
     .then(v => res.send(v))
     .catch(next)
 })
