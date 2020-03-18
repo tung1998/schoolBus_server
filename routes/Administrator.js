@@ -32,10 +32,11 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   if (req.schoolID !== undefined) {
     let result = {}
-    return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, 1, extra)
+    return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, limit, 1, extra)
       .then((data) => {
         result.data = data
         return AdministratorModel.countAdministratorsBySchool(db, req.schoolID)
@@ -48,7 +49,7 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  AdministratorModel.getAdministrators(db, 1, extra)
+  AdministratorModel.getAdministrators(db, limit, 1, extra)
     .then((data) => {
       result.data = data
       return AdministratorModel.countAdministrators(db)
@@ -64,12 +65,13 @@ router.get('/', (req, res, next) => {
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
+  let limit = Number(req.query.limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, page, extra)
+      return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, limit, page, extra)
         .then((data) => {
           result.data = data
           return AdministratorModel.countAdministratorsBySchool(db, req.schoolID)
@@ -82,7 +84,7 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    AdministratorModel.getAdministrators(db, page, extra)
+    AdministratorModel.getAdministrators(db, limit, page, extra)
       .then((data) => {
         result.data = data
         return AdministratorModel.countAdministrators(db)
