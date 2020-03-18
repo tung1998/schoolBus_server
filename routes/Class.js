@@ -29,10 +29,11 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   if (req.schoolID !== undefined) {
     let result = {}
-    return ClassModel.getClassesBySchool(db, req.schoolID, 1, extra)
+    return ClassModel.getClassesBySchool(db, req.schoolID, limit, 1, extra)
       .then((data) => {
         result.data = data
         return ClassModel.countClassesBySchool(db, req.schoolID)
@@ -45,7 +46,7 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  ClassModel.getClasses(db, 1, extra)
+  ClassModel.getClasses(db, limit, 1, extra)
     .then((data) => {
       result.data = data
       return ClassModel.countClasses(db)
@@ -60,13 +61,14 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return ClassModel.getClassesBySchool(db, req.schoolID, page, extra)
+      return ClassModel.getClassesBySchool(db, req.schoolID, limit, page, extra)
         .then((data) => {
           result.data = data
           return ClassModel.countClassesBySchool(db, req.schoolID)
@@ -79,7 +81,7 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    ClassModel.getClasses(db, page, extra)
+    ClassModel.getClasses(db, limit, page, extra)
       .then((data) => {
         result.data = data
         return ClassModel.countClasses(db)
@@ -184,8 +186,9 @@ router.get('/bySchool', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
   let schoolID = req.schoolID || req.query.schoolID
+  let limit = Number(req.query.limit)
   let page = Number(req.query.page) || 1
-  ClassModel.getClassesBySchool(db, schoolID, page, extra)
+  ClassModel.getClassesBySchool(db, schoolID, limit, page, extra)
     .then(v => res.send(v))
     .catch(next)
 })

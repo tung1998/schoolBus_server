@@ -34,15 +34,16 @@ function countClasses (db) {
 /**
  * Get classes.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='school,teacher']
  * @returns {Object}
  */
-function getClasses (db, page, extra = 'school,teacher') {
+function getClasses (db, limit, page, extra = 'school,teacher') {
   return db.collection(process.env.CLASS_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
@@ -91,15 +92,16 @@ function getClassesByIDs (db, classIDs, extra = 'school,teacher') {
  * Get classes by school.
  * @param {Object} db
  * @param {string} schoolID
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='school,teacher']
  * @returns {Object}
  */
-function getClassesBySchool (db, schoolID, page, extra = 'school,teacher') {
+function getClassesBySchool (db, schoolID, limit, page, extra = 'school,teacher') {
   return db.collection(process.env.CLASS_COLLECTION)
     .find({ isDeleted: false, schoolID })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
