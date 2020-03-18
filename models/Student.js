@@ -50,12 +50,12 @@ function countStudents (db) {
 /**
  * Get students.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,class,carStop']
- * @param {number} limit
  * @returns {Object}
  */
-function getStudents (db, page, extra = 'user,class,carStop', limit) {
+function getStudents (db, limit, page, extra = 'user,class,carStop') {
   return db.collection(process.env.STUDENT_COLLECTION)
     .find({ isDeleted: false })
     .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
@@ -125,15 +125,16 @@ function getStudentsByIDs (db, studentIDs, extra = 'user,class,carStop') {
  * Get students by class.
  * @param {Object} db
  * @param {(string|Array)} classID
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,class,carStop']
  * @returns {Object}
  */
-function getStudentsByClass (db, classID, page, extra = 'user,class,carStop') {
+function getStudentsByClass (db, classID, limit, page, extra = 'user,class,carStop') {
   return db.collection(process.env.STUDENT_COLLECTION)
     .find({ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID })
-    .skip((process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
@@ -382,13 +383,14 @@ function countStudentsByClass (db, classID) {
  * Get students by school.
  * @param {Object} db
  * @param {string} schoolID
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,class,carStop']
  * @returns {Object}
  */
-function getStudentsBySchool (db, schoolID, page, extra = 'user,class,carStop') {
+function getStudentsBySchool (db, schoolID, limit, page, extra = 'user,class,carStop') {
   return getClassIDsBySchool(db, schoolID)
-    .then(classIDs => getStudentsByClass(db, classIDs, page, extra))
+    .then(classIDs => getStudentsByClass(db, classIDs, limit, page, extra))
 }
 
 /**
