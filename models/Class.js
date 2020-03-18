@@ -245,6 +245,20 @@ function countClassesBySchool (db, schoolID) {
     .count()
 }
 
+/**
+ * Get classIDs by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function getClassIDsBySchool (db, schoolID) {
+  return db.collection(process.env.CLASS_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then(v => v.map(({ _id }) => String(_id)))
+}
+
 module.exports = {
   createClass,
   countClasses,
@@ -256,6 +270,7 @@ module.exports = {
   deleteClass,
   deleteClassesBySchool,
   countClassesBySchool,
+  getClassIDsBySchool,
 }
 
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
