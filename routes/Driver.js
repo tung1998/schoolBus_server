@@ -29,10 +29,11 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   if (req.schoolID !== undefined) {
     let result = {}
-    return DriverModel.getDriversBySchool(db, req.schoolID, 1, extra)
+    return DriverModel.getDriversBySchool(db, req.schoolID, limit, 1, extra)
       .then((data) => {
         result.data = data
         return DriverModel.countDriversBySchool(db, req.schoolID)
@@ -45,7 +46,7 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  DriverModel.getDrivers(db, 1, extra)
+  DriverModel.getDrivers(db, limit, 1, extra)
     .then((data) => {
       result.data = data
       return DriverModel.countDrivers(db)
@@ -61,12 +62,13 @@ router.get('/', (req, res, next) => {
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
+  let limit = Number(req.query.limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return DriverModel.getDriversBySchool(db, req.schoolID, page, extra)
+      return DriverModel.getDriversBySchool(db, req.schoolID, limit, page, extra)
         .then((data) => {
           result.data = data
           return DriverModel.countDriversBySchool(db, req.schoolID)
@@ -79,7 +81,7 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    DriverModel.getDrivers(db, page, extra)
+    DriverModel.getDrivers(db, limit, page, extra)
       .then((data) => {
         result.data = data
         return DriverModel.countDrivers(db)

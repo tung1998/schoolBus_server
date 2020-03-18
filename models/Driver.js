@@ -56,15 +56,16 @@ function countDrivers (db) {
 /**
  * Get drivers.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user']
  * @returns {Object}
  */
-function getDrivers (db, page, extra = 'user') {
+function getDrivers (db, limit, page, extra = 'user') {
   return db.collection(process.env.DRIVER_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
@@ -253,15 +254,16 @@ function countDriversBySchool (db, schoolID) {
  * Get drivers by school.
  * @param {Object} db
  * @param {string} schoolID
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user']
  * @returns {Object}
  */
-function getDriversBySchool (db, schoolID, page, extra = 'user') {
+function getDriversBySchool (db, schoolID, limit, page, extra = 'user') {
   return db.collection(process.env.DRIVER_COLLECTION)
     .find({ isDeleted: false, schoolID })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
