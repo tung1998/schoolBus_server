@@ -378,6 +378,30 @@ function countStudentsByClass (db, classID) {
     .count()
 }
 
+/**
+ * Get students by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} page
+ * @param {string} [extra='user,class,carStop']
+ * @returns {Object}
+ */
+function getStudentsBySchool (db, schoolID, page, extra = 'user,class,carStop') {
+  return getClassIDsBySchool(db, schoolID)
+    .then(classIDs => getStudentsByClass(db, classIDs, page, extra))
+}
+
+/**
+ * Count students by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function countStudentsBySchool (db, schoolID) {
+  return getClassIDsBySchool(db, schoolID)
+    .then(classIDs => countStudentsByClass(db, classIDs))
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -393,10 +417,12 @@ module.exports = {
   getStudentsCarStopIDs,
   updateStudentsDeleteCarStop,
   countStudentsByClass,
+  getStudentsBySchool,
+  countStudentsBySchool,
 }
 
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
-const { getClassesByIDs, getClassByID } = require('./Class')
+const { getClassesByIDs, getClassByID, getClassIDsBySchool } = require('./Class')
 const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
 const { deleteParentByStudent } = require('./Parent')
 const { updateStudentListsRemoveStudentCarStop, updateStudentListsReplaceCarStop } = require('./StudentList')
