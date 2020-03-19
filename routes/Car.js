@@ -28,9 +28,10 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   let result = {}
-  CarModel.getCars(db, 1, extra)
+  CarModel.getCars(db, limit, 1, extra)
     .then((data) => {
       result.data = data
       return CarModel.countCars(db)
@@ -45,12 +46,13 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
-    CarModel.getCars(db, page, extra)
+    CarModel.getCars(db, limit, page, extra)
       .then((data) => {
         result.data = data
         return CarModel.countCars(db)

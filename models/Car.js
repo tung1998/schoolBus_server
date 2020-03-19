@@ -34,15 +34,16 @@ function countCars (db) {
 /**
  * Get cars.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='carModel']
  * @returns {Object}
  */
-function getCars (db, page, extra = 'carModel') {
+function getCars (db, limit, page, extra = 'carModel') {
   return db.collection(process.env.CAR_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
