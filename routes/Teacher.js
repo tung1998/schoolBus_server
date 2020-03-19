@@ -29,10 +29,11 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   if (req.schoolID !== undefined) {
     let result = {}
-    return TeacherModel.getTeachersBySchool(db, req.schoolID, 1, extra)
+    return TeacherModel.getTeachersBySchool(db, req.schoolID, limit, 1, extra)
       .then((data) => {
         result.data = data
         return TeacherModel.countTeachersBySchool(db, req.schoolID)
@@ -45,7 +46,7 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  TeacherModel.getTeachers(db, 1, extra)
+  TeacherModel.getTeachers(db, limit, 1, extra)
     .then((data) => {
       result.data = data
       return TeacherModel.countTeachers(db)
@@ -60,13 +61,14 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return TeacherModel.getTeachersBySchool(db, req.schoolID, page, extra)
+      return TeacherModel.getTeachersBySchool(db, req.schoolID, limit, page, extra)
         .then((data) => {
           result.data = data
           return TeacherModel.countTeachersBySchool(db, req.schoolID)
@@ -79,7 +81,7 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    TeacherModel.getTeachers(db, page, extra)
+    TeacherModel.getTeachers(db, limit, page, extra)
       .then((data) => {
         result.data = data
         return TeacherModel.countTeachers(db)
@@ -187,8 +189,9 @@ router.get('/bySchool', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
   let schoolID = req.schoolID || req.query.schoolID
+  let limit = Number(req.query.limit)
   let page = Number(req.query.page) || 1
-  TeacherModel.getTeachersBySchool(db, schoolID, page, extra)
+  TeacherModel.getTeachersBySchool(db, schoolID, limit, page, extra)
     .then(v => res.send(v))
     .catch(next)
 })
