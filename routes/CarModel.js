@@ -6,8 +6,9 @@ const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
   let { brand, model, seatNumber, fuelType, fuelCapacity, maintenanceDay, maintenanceDistance } = req.body
+  let schoolID = req.schoolID || req.body.schoolID
   let { db } = req.app.locals
-  CarModelModel.createCarModel(db, brand, model, seatNumber, fuelType, fuelCapacity, maintenanceDay, maintenanceDistance)
+  CarModelModel.createCarModel(db, brand, model, seatNumber, fuelType, fuelCapacity, maintenanceDay, maintenanceDistance, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,8 +29,23 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return CarModelModel.getCarModelsBySchool(db, req.schoolID, limit, 1)
+      .then((data) => {
+        result.data = data
+        return CarModelModel.countCarModelsBySchool(db, req.schoolID)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  CarModelModel.getCarModels(db, 1)
+  CarModelModel.getCarModels(db, limit, 1)
     .then((data) => {
       result.data = data
       return CarModelModel.countCarModels(db)
@@ -44,11 +60,26 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return CarModelModel.getCarModelsBySchool(db, req.schoolID, limit, page)
+        .then((data) => {
+          result.data = data
+          return CarModelModel.countCarModelsBySchool(db, req.schoolID)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    CarModelModel.getCarModels(db, page)
+    CarModelModel.getCarModels(db, limit, page)
       .then((data) => {
         result.data = data
         return CarModelModel.countCarModels(db)
@@ -75,7 +106,7 @@ router.get('/:carModelID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:carModelID([0-9a-fA-F]{24})', (req, res, next) => {
   let { carModelID } = req.params
-  let { brand, model, seatNumber, fuelType, fuelCapacity, maintenanceDay, maintenanceDistance } = req.body
+  let { brand, model, seatNumber, fuelType, fuelCapacity, maintenanceDay, maintenanceDistance, schoolID } = req.body
   let obj = {}
   if (brand !== undefined) obj.brand = brand
   if (model !== undefined) obj.model = model
@@ -84,6 +115,7 @@ router.put('/:carModelID([0-9a-fA-F]{24})', (req, res, next) => {
   if (fuelCapacity !== undefined) obj.fuelCapacity = fuelCapacity
   if (maintenanceDay !== undefined) obj.maintenanceDay = maintenanceDay
   if (maintenanceDistance !== undefined) obj.maintenanceDistance = maintenanceDistance
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   CarModelModel.updateCarModel(db, carModelID, obj)
     .then(({ matchedCount }) => {

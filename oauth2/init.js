@@ -8,6 +8,7 @@ const StudentModel = require('./../models/Student')
 const NannyModel = require('./../models/Nanny')
 const DriverModel = require('./../models/Driver')
 const ParentModel = require('./../models/Parent')
+const CarModelModel = require('./../models/CarModel')
 const TripModel = require('./../models/Trip')
 
 const CANCEL_MESSAGE = 'Authentication is fail!'
@@ -90,9 +91,6 @@ function initOAuth2 (db, app) {
     routes: ['/Info(/**)?', '/GPS(/**)?', '/Token(/**)?', '/Notification(/**)?'],
     method: ['get', 'post', 'put', 'delete'],
   }).defend({
-    routes: ['/CarModel', '/CarModel/:page(\\d+)', '/CarModel/:carModelID([0-9a-fA-F]{24})'],
-    method: ['get'],
-  }).defend({
     routes: ['/Route', '/Route/:page(\\d+)', '/Route/:routeID([0-9a-fA-F]{24})'],
     method: ['get'],
   }).defend({
@@ -156,6 +154,9 @@ function initOAuth2 (db, app) {
     method: ['get'],
   }).defend({
     routes: ['/Driver/Log', '/Driver/:driverID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  }).defend({
+    routes: ['/CarModel/Log', '/CarModel/:carModelID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
   })
 
@@ -485,18 +486,44 @@ function initOAuth2 (db, app) {
   })
 
   soas2.layerAnd((req, next, cancel) => {
-    return req.token.type === USER_TYPE_ADMINISTRATOR
-      ? next()
-      : cancel()
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
-    routes: ['/CarModel/Log', '/CarModel/:carModelID([0-9a-fA-F]{24})/Log'],
+    routes: ['/CarModel', '/CarModel/:page(\\d+)', '/CarModel/Log'],
     method: ['get'],
   }).defend({
     routes: ['/CarModel'],
     method: ['post'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return CarModelModel.getCarModelByID(req.app.locals.db, req.params.carModelID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
     routes: ['/CarModel/:carModelID([0-9a-fA-F]{24})'],
-    method: ['put', 'delete'],
+    method: ['get', 'put', 'delete'],
   })
 
   soas2.layerAnd((req, next, cancel) => {

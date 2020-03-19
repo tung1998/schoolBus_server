@@ -10,9 +10,10 @@ const { ObjectID } = require('mongodb')
  * @param {number} fuelCapacity
  * @param {number} maintenanceDay
  * @param {number} maintenanceDistance
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createCarModel (db, brand, model, seatNumber, fuelType, fuelCapacity, maintenanceDay, maintenanceDistance) {
+function createCarModel (db, brand, model, seatNumber, fuelType, fuelCapacity, maintenanceDay, maintenanceDistance, schoolID) {
   return db.collection(process.env.CAR_MODEL_COLLECTION)
     .insertOne({
       brand,
@@ -22,6 +23,7 @@ function createCarModel (db, brand, model, seatNumber, fuelType, fuelCapacity, m
       fuelCapacity,
       maintenanceDay,
       maintenanceDistance,
+      schoolID,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -42,14 +44,15 @@ function countCarModels (db) {
 /**
  * Get carModels.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @returns {Object}
  */
-function getCarModels (db, page) {
+function getCarModels (db, limit, page) {
   return db.collection(process.env.CAR_MODEL_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
 }
 
@@ -112,6 +115,34 @@ function deleteCarModel (db, carModelID) {
   return p
 }
 
+/**
+ * Count carModels by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function countCarModelsBySchool (db, schoolID) {
+  return db.collection(process.env.CAR_MODEL_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .count()
+}
+
+/**
+ * Get carModels by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} limit
+ * @param {number} page
+ * @returns {Object}
+ */
+function getCarModelsBySchool (db, schoolID, limit, page) {
+  return db.collection(process.env.CAR_MODEL_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .toArray()
+}
+
 module.exports = {
   createCarModel,
   countCarModels,
@@ -120,6 +151,8 @@ module.exports = {
   getCarModelsByIDs,
   updateCarModel,
   deleteCarModel,
+  getCarModelsBySchool,
+  countCarModelsBySchool,
 }
 
 const { deleteCarsByCarModel } = require('./Car')
