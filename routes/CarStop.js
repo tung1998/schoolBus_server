@@ -28,8 +28,9 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let result = {}
-  CarStopModel.getCarStops(db, 1)
+  CarStopModel.getCarStops(db, limit, 1)
     .then((data) => {
       result.data = data
       return CarStopModel.countCarStops(db)
@@ -44,11 +45,12 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
-    CarStopModel.getCarStops(db, page)
+    CarStopModel.getCarStops(db, limit, page)
       .then((data) => {
         result.data = data
         return CarStopModel.countCarStops(db)
@@ -147,29 +149,6 @@ router.get('/:carStopID([0-9a-fA-F]{24})/Log', (req, res, next) => {
   page = Number(page)
   LogModel.getLogsByObject(db, 'carStop', carStopID, sortBy, sortType, limit, page, extra)
     .then(v => res.send(v))
-    .catch(next)
-})
-
-router.post('/search', (req, res, next) => {
-  let { name, address } = req.body
-  let { extra } = req.query
-  let db = req.app.locals.db
-  let result = {}
-  CarStopModel.getCarStopsBySearch(db, name, address, extra)
-    .then((data) => {
-      result.data = data
-      result.count = data.length
-      result.page = 1
-      res.send(result)
-    })
-    .catch(next)
-})
-
-router.get('/byTypeInRoute', (req, res, next) => {
-  let { type, routeID } = req.query
-  let { db } = req.app.locals
-  CarStopModel.getCarStopsByTypeInRoute(type, db, routeID)
-    .then(carStops => res.send(carStops))
     .catch(next)
 })
 

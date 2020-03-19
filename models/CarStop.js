@@ -36,14 +36,15 @@ function countCarStops (db) {
 /**
  * Get carStops.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @returns {Object}
  */
-function getCarStops (db, page) {
+function getCarStops (db, limit, page) {
   return db.collection(process.env.CAR_STOP_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
 }
 
@@ -107,147 +108,6 @@ function deleteCarStop (db, carStopID) {
   return p
 }
 
-/**
- * Trả về tất cả Carstops theo IDs
- * @param {Object} db
- * @param {Boolean} extra
- * @return {Object}
- */
-function getCarStopsBySearch (db, name, address, extra = true) {
-  return new Promise((resolve, reject) => {
-    let condition = { isDeleted: false }
-    if (name) {
-      condition.name = { $regex: name, $options: 'i' }
-    }
-    if (address) {
-      condition.address = { $regex: address, $options: 'i' }
-    }
-    db.collection(process.env.CAR_STOP_COLLECTION)
-      .find(condition)
-      .toArray()
-      .then(carStops => {
-        if (!carStops.length) resolve([])
-        else {
-          resolve(carStops)
-        }
-      })
-      .catch(reject)
-  })
-}
-
-/** Get carStops by type in route.
- * @param {string} type
- * @param {Object} db
- * @param {string} routeID
- * @returns {Promise}
- */
-function getCarStopsByTypeInRoute (type, db, routeID) {
-  switch (type) {
-    case 'pickup':
-      return getPickupCarStops(db, routeID)
-    case 'takeoff':
-      return getTakeoffCarStops(db, routeID)
-    case 'require':
-      return getRequireCarStopsByRoute(db, routeID)
-    default:
-      return Promise.resolve([])
-  }
-}
-
-/**
- * Get pickup carStops.
- * @param {Object} db
- * @param {string} routeID
- * @returns {Promise}
- */
-function getPickupCarStops (db, routeID) {
-  const query = routeID === undefined
-    ? { isDeleted: false, pickupCarStop: { $elemMatch: { $exists: true } } }
-    : { isDeleted: false, pickupCarStop: { $elemMatch: { $exists: true } }, _id: ObjectID(routeID) }
-  return db.collection(process.env.ROUTE_COLLECTION)
-    .find(query)
-    .project({
-      _id: 0,
-      requireCarStop: { $slice: [0, 1] },
-      'requireCarStop.carStopID': 1,
-      'requireCarStop.hide': 1,
-      'pickupCarStop.carStopID': 1,
-      'pickupCarStop.hide': 1,
-    })
-    .toArray()
-    .then((routes) => {
-      const carStopIDs = routes.reduce((accumulator, { requireCarStop, pickupCarStop }) => {
-        // accumulator.push(ObjectID(requireCarStop[0].carStopID))
-        pickupCarStop.forEach(({ carStopID, hide }) => {
-          if (hide === false) accumulator.push(ObjectID(carStopID))
-        })
-        return accumulator
-      }, [])
-      return getCarStopsByIDs(db, carStopIDs).then(Object.values)
-    })
-}
-
-/**
- * Get takeoff carStops.
- * @param {Object} db
- * @param {string} routeID
- * @returns {Promise}
- */
-function getTakeoffCarStops (db, routeID) {
-  const query = routeID === undefined
-    ? { isDeleted: false, takeoffCarStop: { $elemMatch: { $exists: true } } }
-    : { isDeleted: false, takeoffCarStop: { $elemMatch: { $exists: true } }, _id: ObjectID(routeID) }
-  return db.collection(process.env.ROUTE_COLLECTION)
-    .find(query)
-    .project({
-      _id: 0,
-      requireCarStop: { $slice: [1, 1] },
-      'requireCarStop.carStopID': 1,
-      'requireCarStop.hide': 1,
-      'takeoffCarStop.carStopID': 1,
-      'takeoffCarStop.hide': 1,
-    })
-    .toArray()
-    .then((routes) => {
-      const carStopIDs = routes.reduce((accumulator, { requireCarStop, takeoffCarStop }) => {
-        // accumulator.push(ObjectID(requireCarStop[0].carStopID))
-        takeoffCarStop.forEach(({ carStopID, hide }) => {
-          if (hide === false) accumulator.push(ObjectID(carStopID))
-        })
-        return accumulator
-      }, [])
-      return getCarStopsByIDs(db, carStopIDs).then(Object.values)
-    })
-}
-
-/**
- * Get pickup carStops.
- * @param {Object} db
- * @param {string} routeID
- * @returns {Promise}
- */
-function getRequireCarStopsByRoute (db, routeID) {
-  const query = routeID === undefined
-    ? { isDeleted: false, requireCarStop: { $elemMatch: { $exists: true } } }
-    : { isDeleted: false, requireCarStop: { $elemMatch: { $exists: true } }, _id: ObjectID(routeID) }
-  return db.collection(process.env.ROUTE_COLLECTION)
-    .find(query)
-    .project({
-      _id: 0,
-      requireCarStop: { $slice: [0, 2] },
-    })
-    .toArray()
-    .then((routes) => {
-      const carStopIDs = routes.reduce((accumulator, { requireCarStop }) => {
-        requireCarStop.forEach(({ carStopID, hide }) => {
-          if (hide === false) accumulator.push(ObjectID(carStopID))
-        })
-        return accumulator
-      }, [])
-      return getCarStopsByIDs(db, carStopIDs).then(Object.values)
-    })
-}
-
 module.exports = {
   createCarStop,
   countCarStops,
@@ -256,8 +116,6 @@ module.exports = {
   getCarStopsByIDs,
   updateCarStop,
   deleteCarStop,
-  getCarStopsBySearch,
-  getCarStopsByTypeInRoute,
 }
 
 const { updateStudentsDeleteCarStop } = require('./Student')
