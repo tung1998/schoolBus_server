@@ -28,9 +28,10 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let limit = Number(req.query.limit)
   let { extra } = req.query
   let result = {}
-  RouteModel.getRoutes(db, 1, extra)
+  RouteModel.getRoutes(db, limit, 1, extra)
     .then((data) => {
       result.data = data
       return RouteModel.countRoutes(db)
@@ -46,11 +47,12 @@ router.get('/', (req, res, next) => {
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let { extra } = req.query
+  let limit = Number(req.query.limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     let result = {}
-    RouteModel.getRoutes(db, page, extra)
+    RouteModel.getRoutes(db, limit, page, extra)
       .then((data) => {
         result.data = data
         return RouteModel.countRoutes(db)

@@ -48,15 +48,16 @@ function countRoutes (db) {
 /**
  * Get routes.
  * @param {Object} db
+ * @param {number} limit
  * @param {number} page
  * @param {string} [extra='carStop,car,driver,nanny,studentList']
  * @returns {Object}
  */
-function getRoutes (db, page, extra = 'carStop,car,driver,nanny,studentList') {
+function getRoutes (db, limit, page, extra = 'carStop,car,driver,nanny,studentList') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
     .then((v) => {
       if (v.length === 0) return []
