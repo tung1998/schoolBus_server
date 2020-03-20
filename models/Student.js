@@ -130,22 +130,26 @@ function getStudentsByIDs (db, studentIDs, extra = 'user,class,carStop') {
  * Get students by class.
  * @param {Object} db
  * @param {(string|Array)} classID
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,class,carStop']
  * @returns {Object}
  */
-function getStudentsByClass (db, classID, limit, page, extra = 'user,class,carStop') {
-  return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getStudentsByClass (db, classID, query, limit, page, extra = 'user,class,carStop') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
@@ -376,11 +380,12 @@ function updateStudentsDeleteCarStop (db, carStopID) {
  * Count students by class.
  * @param {Object} db
  * @param {(string|Array)} classID
+ * @param {Object} query
  * @returns {Object}
  */
-function countStudentsByClass (db, classID) {
+function countStudentsByClass (db, classID, query) {
   return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID })
+    .find({ $and: [{ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID }, query] })
     .count()
 }
 
@@ -388,25 +393,27 @@ function countStudentsByClass (db, classID) {
  * Get students by school.
  * @param {Object} db
  * @param {string} schoolID
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,class,carStop']
  * @returns {Object}
  */
-function getStudentsBySchool (db, schoolID, limit, page, extra = 'user,class,carStop') {
+function getStudentsBySchool (db, schoolID, query, limit, page, extra = 'user,class,carStop') {
   return getClassIDsBySchool(db, schoolID)
-    .then(classIDs => getStudentsByClass(db, classIDs, limit, page, extra))
+    .then(classIDs => getStudentsByClass(db, classIDs, query, limit, page, extra))
 }
 
 /**
  * Count students by school.
  * @param {Object} db
  * @param {string} schoolID
+ * @param {Object} query
  * @returns {Object}
  */
-function countStudentsBySchool (db, schoolID) {
+function countStudentsBySchool (db, schoolID, query) {
   return getClassIDsBySchool(db, schoolID)
-    .then(classIDs => countStudentsByClass(db, classIDs))
+    .then(classIDs => countStudentsByClass(db, classIDs, query))
 }
 
 module.exports = {

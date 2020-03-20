@@ -32,10 +32,10 @@ router.get('/', (req, res, next) => {
   limit = Number(limit)
   if (req.schoolID !== undefined) {
     let result = {}
-    return StudentModel.getStudentsBySchool(db, req.schoolID, limit, 1, extra)
+    return StudentModel.getStudentsBySchool(db, req.schoolID, query, limit, 1, extra)
       .then((data) => {
         result.data = data
-        return StudentModel.countStudentsBySchool(db, req.schoolID)
+        return StudentModel.countStudentsBySchool(db, req.schoolID, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -67,10 +67,10 @@ router.get('/:page(\\d+)', (req, res, next) => {
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return StudentModel.getStudentsBySchool(db, req.schoolID, limit, page, extra)
+      return StudentModel.getStudentsBySchool(db, req.schoolID, query, limit, page, extra)
         .then((data) => {
           result.data = data
-          return StudentModel.countStudentsBySchool(db, req.schoolID)
+          return StudentModel.countStudentsBySchool(db, req.schoolID, query)
         })
         .then((cnt) => {
           result.count = cnt
@@ -191,10 +191,10 @@ router.get('/:studentID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 
 router.get('/byClass', (req, res, next) => {
   let { db } = req.app.locals
-  let { classID, extra } = req.query
-  let limit = Number(req.query.limit)
-  let page = Number(req.query.page) || 1
-  StudentModel.getStudentsByClass(db, classID, limit, page, extra)
+  let { classID, limit, page, extra, ...query } = req.query
+  limit = Number(limit)
+  page = Number(page) || 1
+  StudentModel.getStudentsByClass(db, classID, query, limit, page, extra)
     .then(v => res.send(v))
     .catch(next)
 })
