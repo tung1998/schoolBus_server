@@ -29,7 +29,7 @@ router.post('/', (req, res, next) => {
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
   let { limit, extra, ...query } = req.query
-  limit = Number(req.query.limit)
+  limit = Number(limit)
   if (req.schoolID !== undefined) {
     let result = {}
     return StudentModel.getStudentsBySchool(db, req.schoolID, limit, 1, extra)
@@ -61,7 +61,7 @@ router.get('/', (req, res, next) => {
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
   let { limit, extra, ...query } = req.query
-  limit = Number(req.query.limit)
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
