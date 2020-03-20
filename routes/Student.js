@@ -28,8 +28,8 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(req.query.limit)
   if (req.schoolID !== undefined) {
     let result = {}
     return StudentModel.getStudentsBySchool(db, req.schoolID, limit, 1, extra)
@@ -45,10 +45,10 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  StudentModel.getStudents(db, limit, 1, extra)
+  StudentModel.getStudents(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return StudentModel.countStudents(db)
+      return StudentModel.countStudents(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -60,8 +60,8 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
-  let limit = Number(req.query.limit)
+  let { limit, extra, ...query } = req.query
+  limit = Number(req.query.limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
@@ -80,10 +80,10 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    StudentModel.getStudents(db, limit, page, extra)
+    StudentModel.getStudents(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return StudentModel.countStudents(db)
+        return StudentModel.countStudents(db, query)
       })
       .then((cnt) => {
         result.count = cnt

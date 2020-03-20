@@ -39,32 +39,37 @@ function createStudent (db, username, password, image, name, phone, email, addre
 /**
  * Count students.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countStudents (db) {
+function countStudents (db, query) {
   return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false })
+    .find({ isDeleted: false, ...query })
     .count()
 }
 
 /**
  * Get students.
  * @param {Object} db
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,class,carStop']
  * @returns {Object}
  */
-function getStudents (db, limit, page, extra = 'user,class,carStop') {
-  return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
+function getStudents (db, query, limit, page, extra = 'user,class,carStop') {
+  return parseQuery(db, query)
+    .then(() => {
+      return db.collection(process.env.STUDENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
     })
 }
 
@@ -429,3 +434,4 @@ const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
 const { deleteParentByStudent } = require('./Parent')
 const { updateStudentListsRemoveStudentCarStop, updateStudentListsReplaceCarStop } = require('./StudentList')
 const { updateTripsRemoveStudent } = require('./Trip')
+const parseQuery = require('./parseQuery')
