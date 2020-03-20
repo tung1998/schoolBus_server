@@ -5,6 +5,7 @@
  * @returns {Object}
  */
 function parseQuery (db, query) {
+  if (query === undefined) return Promise.resolve({})
   let temp = {}
   Object.entries(query).forEach(([k, v]) => {
     k = decodeURIComponent(k)
