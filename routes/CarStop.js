@@ -5,9 +5,10 @@ const CarStopModel = require('./../models/CarStop')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { stopType, name, address, location } = req.body
+  let { stopType, name, address, location, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  CarStopModel.createCarStop(db, stopType, name, address, location)
+  CarStopModel.createCarStop(db, stopType, name, address, location, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,12 +29,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return CarStopModel.getCarStopsBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return CarStopModel.countCarStopsBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  CarStopModel.getCarStops(db, limit, 1)
+  CarStopModel.getCarStops(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return CarStopModel.countCarStops(db)
+      return CarStopModel.countCarStops(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -45,15 +61,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return CarStopModel.getCarStopsBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return CarStopModel.countCarStopsBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    CarStopModel.getCarStops(db, limit, page)
+    CarStopModel.getCarStops(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return CarStopModel.countCarStops(db)
+        return CarStopModel.countCarStops(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -67,7 +98,8 @@ router.get('/:page(\\d+)', (req, res, next) => {
 router.get('/:carStopID([0-9a-fA-F]{24})', (req, res, next) => {
   let { carStopID } = req.params
   let { db } = req.app.locals
-  CarStopModel.getCarStopByID(db, carStopID)
+  let { extra } = req.query
+  CarStopModel.getCarStopByID(db, carStopID, extra)
     .then((v) => {
       if (v === null) res.status(404).send({ message: 'Not Found' })
       else res.send(v)
@@ -77,12 +109,13 @@ router.get('/:carStopID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:carStopID([0-9a-fA-F]{24})', (req, res, next) => {
   let { carStopID } = req.params
-  let { stopType, name, address, location } = req.body
+  let { stopType, name, address, location, schoolID } = req.body
   let obj = {}
   if (stopType !== undefined) obj.stopType = stopType
   if (name !== undefined) obj.name = name
   if (address !== undefined) obj.address = address
   if (location !== undefined) obj.location = location
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   CarStopModel.updateCarStop(db, carStopID, obj)
     .then(({ matchedCount }) => {
