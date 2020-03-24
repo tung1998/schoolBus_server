@@ -98,6 +98,7 @@ function deleteSchool (db, schoolID) {
     )
   p.then(({ matchedCount }) => {
     if (matchedCount === 1) {
+      deleteAdministratorsBySchool(db, schoolID)
       deleteClassesBySchool(db, schoolID)
       deleteTeachersBySchool(db, schoolID)
     }
@@ -115,5 +116,6 @@ module.exports = {
   deleteSchool,
 }
 
+const { deleteAdministratorsBySchool } = require('./Administrator')
 const { deleteClassesBySchool } = require('./Class')
 const { deleteTeachersBySchool } = require('./Teacher')

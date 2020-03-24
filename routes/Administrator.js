@@ -6,10 +6,7 @@ const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
   let { username, password, image, name, phone, email, adminType, permission, schoolID } = req.body
-  if (req.schoolID !== undefined) {
-    schoolID = req.schoolID
-    adminType = 1
-  }
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
   AdministratorModel.createAdministrator(db, username, password, image, name, phone, email, adminType, permission, schoolID)
     .then(({ insertedId }) => {
@@ -32,14 +29,14 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   if (req.schoolID !== undefined) {
     let result = {}
-    return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, limit, 1, extra)
+    return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, query, limit, 1, extra)
       .then((data) => {
         result.data = data
-        return AdministratorModel.countAdministratorsBySchool(db, req.schoolID)
+        return AdministratorModel.countAdministratorsBySchool(db, req.schoolID, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -49,10 +46,10 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  AdministratorModel.getAdministrators(db, limit, 1, extra)
+  AdministratorModel.getAdministrators(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return AdministratorModel.countAdministrators(db)
+      return AdministratorModel.countAdministrators(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -64,17 +61,17 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
-  let limit = Number(req.query.limit)
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, limit, page, extra)
+      return AdministratorModel.getAdministratorsBySchool(db, req.schoolID, query, limit, page, extra)
         .then((data) => {
           result.data = data
-          return AdministratorModel.countAdministratorsBySchool(db, req.schoolID)
+          return AdministratorModel.countAdministratorsBySchool(db, req.schoolID, query)
         })
         .then((cnt) => {
           result.count = cnt
@@ -84,10 +81,10 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    AdministratorModel.getAdministrators(db, limit, page, extra)
+    AdministratorModel.getAdministrators(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return AdministratorModel.countAdministrators(db)
+        return AdministratorModel.countAdministrators(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -122,6 +119,7 @@ router.put('/:administratorID([0-9a-fA-F]{24})', (req, res, next) => {
   if (name !== undefined) obj1.name = name
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
+  if (schoolID !== undefined) obj1.schoolID = schoolID
   let { db } = req.app.locals
   AdministratorModel.updateAdministrator(db, administratorID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {

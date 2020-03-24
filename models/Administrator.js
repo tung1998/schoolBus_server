@@ -20,7 +20,7 @@ const ADMINISTRATOR_TYPE_SCHOOL = 1
  * @returns {Object}
  */
 function createAdministrator (db, username, password, image, name, phone, email, adminType, permission, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_ADMINISTRATOR)
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_ADMINISTRATOR, schoolID)
     .then(({ insertedId }) => (
       db.collection(process.env.ADMINISTRATOR_COLLECTION)
         .insertOne({
@@ -38,33 +38,83 @@ function createAdministrator (db, username, password, image, name, phone, email,
 /**
  * Count administrators.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countAdministrators (db) {
-  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countAdministrators (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ADMINISTRATOR_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count administrators by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countAdministratorsBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ADMINISTRATOR_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get administrators.
  * @param {Object} db
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getAdministrators (db, limit, page, extra = 'user,school') {
-  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
-    .find({ isDeleted: false })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getAdministrators (db, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ADMINISTRATOR_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get administrators by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getAdministratorsBySchool (db, schoolID, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ADMINISTRATOR_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
@@ -254,52 +304,38 @@ function deleteAdministratorByUser (db, userID) {
 }
 
 /**
- * Get administrators by school.
+ * Delete administrators by school.
  * @param {Object} db
  * @param {string} schoolID
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getAdministratorsBySchool (db, schoolID, limit, page, extra = 'user,school') {
+function deleteAdministratorsBySchool (db, schoolID) {
   return db.collection(process.env.ADMINISTRATOR_COLLECTION)
-    .find({ isDeleted: false, schoolID, adminType: ADMINISTRATOR_TYPE_SCHOOL })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
     .toArray()
     .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
+      v.forEach(({ _id }) => {
+        deleteAdministrator(db, String(_id))
+      })
     })
-}
-
-/**
- * Count administrators by school.
- * @param {Object} db
- * @param {string} schoolID
- * @returns {Object}
- */
-function countAdministratorsBySchool (db, schoolID) {
-  return db.collection(process.env.ADMINISTRATOR_COLLECTION)
-    .find({ isDeleted: false, schoolID, adminType: ADMINISTRATOR_TYPE_SCHOOL })
-    .count()
 }
 
 module.exports = {
   createAdministrator,
   countAdministrators,
+  countAdministratorsBySchool,
   getAdministrators,
+  getAdministratorsBySchool,
   getAdministratorByID,
   getAdministratorByUser,
   getAdministratorsByIDs,
   updateAdministrator,
   deleteAdministrator,
   deleteAdministratorByUser,
-  getAdministratorsBySchool,
-  countAdministratorsBySchool,
+  deleteAdministratorsBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
