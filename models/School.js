@@ -100,6 +100,8 @@ function deleteSchool (db, schoolID) {
     if (matchedCount === 1) {
       deleteAdministratorsBySchool(db, schoolID)
       deleteCarsBySchool(db, schoolID)
+      deleteCarFuelsBySchool(db, schoolID)
+      deleteCarMaintenancesBySchool(db, schoolID)
       deleteClassesBySchool(db, schoolID)
       deleteTeachersBySchool(db, schoolID)
     }
@@ -119,5 +121,7 @@ module.exports = {
 
 const { deleteAdministratorsBySchool } = require('./Administrator')
 const { deleteCarsBySchool } = require('./Car')
+const { deleteCarFuelsBySchool } = require('./CarFuel')
+const { deleteCarMaintenancesBySchool } = require('./CarMaintenance')
 const { deleteClassesBySchool } = require('./Class')
 const { deleteTeachersBySchool } = require('./Teacher')
