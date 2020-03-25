@@ -1,30 +1,25 @@
 const { ObjectID } = require('mongodb')
 
-const FEEDBACK_TYPE_FEEDBACK = 0
-const FEEDBACK_TYPE_REPORT = 1
-const FEEDBACK_TYPE_SUPPORT = 2
-
-const FEEDBACK_STATUS_CREATED = 0
-const FEEDBACK_STATUS_RESPONSED = 1
-
 /**
  * Creats feedback.
  * @param {Object} db
  * @param {string} userID
  * @param {number} type
- * @param {string} feedback
+ * @param {string} title
+ * @param {string} content
+ * @param {number} [status=0]
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createFeedback (db, userID, type, feedback) {
+function createFeedback (db, userID, type, title, content, status = 0, schoolID) {
   return db.collection(process.env.FEEDBACK_COLLECTION)
     .insertOne({
       userID,
       type,
-      feedback,
-      status: FEEDBACK_STATUS_CREATED,
-      responseBy: null,
-      responseTime: null,
-      response: null,
+      title,
+      content,
+      status,
+      schoolID,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -34,42 +29,135 @@ function createFeedback (db, userID, type, feedback) {
 /**
  * Count feedbacks.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countFeedbacks (db) {
-  return db.collection(process.env.FEEDBACK_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countFeedbacks (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.FEEDBACK_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count feedbacks by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countFeedbacksBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.FEEDBACK_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count feedbacks by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countFeedbacksByUser (db, userID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.FEEDBACK_COLLECTION)
+        .find({ $and: [{ isDeleted: false, userID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get feedbacks.
  * @param {Object} db
+ * @param {Object} query
+ * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,responseUser']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getFeedbacks (db, page, extra = 'user,responseUser') {
-  return db.collection(process.env.FEEDBACK_COLLECTION)
-    .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getFeedbacks (db, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.FEEDBACK_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get feedbacks by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getFeedbacksBySchool (db, schoolID, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.FEEDBACK_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get feedbacks by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getFeedbacksByUser (db, userID, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.FEEDBACK_COLLECTION)
+        .find({ $and: [{ isDeleted: false, userID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
  * Get feedback by id.
  * @param {Object} db
  * @param {string} feedbackID
- * @param {string} [extra='user,responseUser']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getFeedbackByID (db, feedbackID, extra = 'user,responseUser') {
+function getFeedbackByID (db, feedbackID, extra = 'user,school') {
   return db.collection(process.env.FEEDBACK_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(feedbackID) })
     .then((v) => {
@@ -83,10 +171,10 @@ function getFeedbackByID (db, feedbackID, extra = 'user,responseUser') {
  * Get feedbacks by ids.
  * @param {Object} db
  * @param {Array} feedbackIDs
- * @param {string} [extra='user,responseUser']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getFeedbacksByIDs (db, feedbackIDs, extra = 'user,responseUser') {
+function getFeedbacksByIDs (db, feedbackIDs, extra = 'user,school') {
   return db.collection(process.env.FEEDBACK_COLLECTION)
     .find({ isDeleted: false, _id: { $in: feedbackIDs } })
     .toArray()
@@ -109,17 +197,17 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let userIDs = []
-    let responseUserIDs = []
-    docs.forEach(({ userID, responseBy }) => {
+    let schoolIDs = []
+    docs.forEach(({ userID, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
       }
-      if (e.includes('responseUser') && responseBy != null) {
-        responseUserIDs.push(ObjectID(responseBy))
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
       }
     })
     let users
-    let responseUsers
+    let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -128,29 +216,29 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
-    if (responseUserIDs.length > 0) {
-      let p = getUsersByIDs(db, responseUserIDs)
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
         .then((v) => {
-          responseUsers = v
+          schools = v
         })
       arr.push(p)
     }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID, responseBy } = c
+          let { userID, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
           }
-          if (responseUsers !== undefined && responseBy != null) {
-            c.responseUser = responseUsers[responseBy]
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { userID, responseBy } = doc
+  let { userID, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
@@ -159,10 +247,10 @@ function addExtra (db, docs, extra) {
       })
     arr.push(p)
   }
-  if (e.includes('responseUser') && responseBy != null) {
-    let p = getUserByID(db, responseBy)
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
       .then((v) => {
-        doc.responseUser = v
+        doc.school = v
       })
     arr.push(p)
   }
@@ -186,22 +274,6 @@ function updateFeedback (db, feedbackID, obj) {
 }
 
 /**
- * Update feedback response.
- * @param {Object} db
- * @param {string} feedbackID
- * @param {string} responseBy
- * @param {string} response
- * @returns {Object}
- */
-function updateFeedbackResponse (db, feedbackID, responseBy, response) {
-  return db.collection(process.env.FEEDBACK_COLLECTION)
-    .updateOne(
-      { isDeleted: false, _id: ObjectID(feedbackID) },
-      { $set: { updatedTime: Date.now(), status: FEEDBACK_STATUS_RESPONSED, responseBy, responseTime: Date.now(), response } },
-    )
-}
-
-/**
  * Delete feedback.
  * @param {Object} db
  * @param {string} feedbackID
@@ -215,15 +287,58 @@ function deleteFeedback (db, feedbackID) {
     )
 }
 
+/**
+ * Delete feedbacks by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function deleteFeedbacksBySchool (db, schoolID) {
+  return db.collection(process.env.FEEDBACK_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteFeedback(db, String(_id))
+      })
+    })
+}
+
+/**
+ * Delete feedbacks by user.
+ * @param {Object} db
+ * @param {string} userID
+ * @returns {Object}
+ */
+function deleteFeedbacksByUser (db, userID) {
+  return db.collection(process.env.FEEDBACK_COLLECTION)
+    .find({ isDeleted: false, userID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteFeedback(db, String(_id))
+      })
+    })
+}
+
 module.exports = {
   createFeedback,
   countFeedbacks,
+  countFeedbacksBySchool,
+  countFeedbacksByUser,
   getFeedbacks,
+  getFeedbacksBySchool,
+  getFeedbacksByUser,
   getFeedbackByID,
   getFeedbacksByIDs,
   updateFeedback,
-  updateFeedbackResponse,
   deleteFeedback,
+  deleteFeedbacksBySchool,
+  deleteFeedbacksByUser,
 }
 
+const parseQuery = require('./parseQuery')
 const { getUsersByIDs, getUserByID } = require('./User')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')

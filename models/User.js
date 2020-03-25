@@ -150,6 +150,7 @@ function deleteUser (db, userID, deleteOption = true) {
         }
       }
       deleteTokensByUser(db, userID)
+      deleteFeedbacksByUser(db, userID)
     }
   })
   return p
@@ -346,3 +347,4 @@ const { deleteNannyByUser } = require('./Nanny')
 const { deleteParentByUser } = require('./Parent')
 const { deleteDriverByUser } = require('./Driver')
 const { deleteTeacherByUser } = require('./Teacher')
+const { deleteFeedbacksByUser } = require('./Feedback')

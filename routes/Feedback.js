@@ -5,9 +5,11 @@ const FeedbackModel = require('./../models/Feedback')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { userID, type, feedback } = req.body
+  let { userID, type, title, content, status, schoolID } = req.body
+  if (req.userID !== undefined) userID = req.userID
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  FeedbackModel.createFeedback(db, userID, type, feedback)
+  FeedbackModel.createFeedback(db, userID, type, title, content, status, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,12 +30,41 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.userID !== undefined) {
+    let result = {}
+    return FeedbackModel.getFeedbacksByUser(db, req.userID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return FeedbackModel.countFeedbacksByUser(db, req.userID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return FeedbackModel.getFeedbacksBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return FeedbackModel.countFeedbacksBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  FeedbackModel.getFeedbacks(db, 1, extra)
+  FeedbackModel.getFeedbacks(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return FeedbackModel.countFeedbacks(db)
+      return FeedbackModel.countFeedbacks(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -45,15 +76,44 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.userID !== undefined) {
+      let result = {}
+      return FeedbackModel.getFeedbacksByUser(db, req.userID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return FeedbackModel.countFeedbacksByUser(db, req.userID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return FeedbackModel.getFeedbacksBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return FeedbackModel.countFeedbacksBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    FeedbackModel.getFeedbacks(db, page, extra)
+    FeedbackModel.getFeedbacks(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return FeedbackModel.countFeedbacks(db)
+        return FeedbackModel.countFeedbacks(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -78,11 +138,14 @@ router.get('/:feedbackID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:feedbackID([0-9a-fA-F]{24})', (req, res, next) => {
   let { feedbackID } = req.params
-  let { userID, type, feedback } = req.body
+  let { userID, type, title, content, status, schoolID } = req.body
   let obj = {}
   if (userID !== undefined) obj.userID = userID
   if (type !== undefined) obj.type = type
-  if (feedback !== undefined) obj.feedback = feedback
+  if (title !== undefined) obj.title = title
+  if (content !== undefined) obj.content = content
+  if (status !== undefined) obj.status = status
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   FeedbackModel.updateFeedback(db, feedbackID, obj)
     .then(({ matchedCount }) => {
@@ -95,33 +158,6 @@ router.put('/:feedbackID([0-9a-fA-F]{24})', (req, res, next) => {
           req.headers['user-agent'],
           req.ip,
           `Update feedback : _id = ${feedbackID}`,
-          Date.now(),
-          1,
-          req.body,
-          'feedback',
-          feedbackID,
-        )
-      }
-    })
-    .catch(next)
-})
-
-router.put('/:feedbackID([0-9a-fA-F]{24})/response', (req, res, next) => {
-  let { feedbackID } = req.params
-  let { response } = req.body
-  let responseBy = req.token != null ? req.token.userID : null
-  let { db } = req.app.locals
-  FeedbackModel.updateFeedbackResponse(db, feedbackID, responseBy, response)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
-      else {
-        res.send()
-        return LogModel.createLog(
-          db,
-          req.token ? req.token.userID : null,
-          req.headers['user-agent'],
-          req.ip,
-          `Update feedback response : _id = ${feedbackID}`,
           Date.now(),
           1,
           req.body,
