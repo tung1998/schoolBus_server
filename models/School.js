@@ -108,6 +108,7 @@ function deleteSchool (db, schoolID) {
       deleteFeedbacksBySchool(db, schoolID)
       deleteParentsBySchool(db, schoolID)
       deleteParentRequestsBySchool(db, schoolID)
+      deleteStudentsBySchool(db, schoolID)
       deleteTeachersBySchool(db, schoolID)
     }
   })
@@ -134,4 +135,5 @@ const { deleteClassesBySchool } = require('./Class')
 const { deleteFeedbacksBySchool } = require('./Feedback')
 const { deleteParentsBySchool } = require('./Parent')
 const { deleteParentRequestsBySchool } = require('./ParentRequest')
+const { deleteStudentsBySchool } = require('./Student')
 const { deleteTeachersBySchool } = require('./Teacher')

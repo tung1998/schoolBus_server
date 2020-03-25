@@ -16,10 +16,11 @@ const USER_TYPE_STUDENT = 1
  * @param {string} classID
  * @param {number} status
  * @param {string} carStopID
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createStudent (db, username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_STUDENT)
+function createStudent (db, username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID, schoolID) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_STUDENT, schoolID)
     .then(({ insertedId }) => (
       db.collection(process.env.STUDENT_COLLECTION)
         .insertOne({
@@ -29,6 +30,7 @@ function createStudent (db, username, password, image, name, phone, email, addre
           classID,
           status,
           carStopID,
+          schoolID,
           createdTime: Date.now(),
           updatedTime: Date.now(),
           isDeleted: false,
@@ -43,9 +45,44 @@ function createStudent (db, username, password, image, name, phone, email, addre
  * @returns {Object}
  */
 function countStudents (db, query) {
-  return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false, ...query })
-    .count()
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count students by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countStudentsBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count students by class.
+ * @param {Object} db
+ * @param {string} classID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countStudentsByClass (db, classID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, classID }, query] })
+        .count()
+    ))
 }
 
 /**
@@ -54,13 +91,13 @@ function countStudents (db, query) {
  * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,class,carStop']
+ * @param {string} [extra='user,class,carStop,school']
  * @returns {Object}
  */
-function getStudents (db, query, limit, page, extra = 'user,class,carStop') {
+function getStudents (db, query, limit, page, extra = 'user,class,carStop,school') {
   return parseQuery(db, query)
-    .then(() => {
-      return db.collection(process.env.STUDENT_COLLECTION)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
         .find({ $and: [{ isDeleted: false }, query] })
         .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
         .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
@@ -70,17 +107,69 @@ function getStudents (db, query, limit, page, extra = 'user,class,carStop') {
           if (!extra) return v
           return addExtra(db, v, extra)
         })
-    })
+    ))
+}
+
+/**
+ * Get students by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,class,carStop,school']
+ * @returns {Object}
+ */
+function getStudentsBySchool (db, schoolID, query, limit, page, extra = 'user,class,carStop,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get students by class.
+ * @param {Object} db
+ * @param {string} classID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,class,carStop,school']
+ * @returns {Object}
+ */
+function getStudentsByClass (db, classID, query, limit, page, extra = 'user,class,carStop,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, classID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
  * Get student by id.
  * @param {Object} db
  * @param {string} studentID
- * @param {string} [extra='user,class,carStop']
+ * @param {string} [extra='user,class,carStop,school']
  * @returns {Object}
  */
-function getStudentByID (db, studentID, extra = 'user,class,carStop') {
+function getStudentByID (db, studentID, extra = 'user,class,carStop,school') {
   return db.collection(process.env.STUDENT_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(studentID) })
     .then((v) => {
@@ -94,10 +183,10 @@ function getStudentByID (db, studentID, extra = 'user,class,carStop') {
  * Get student by user.
  * @param {Object} db
  * @param {string} userID
- * @param {string} [extra='user,class,carStop']
+ * @param {string} [extra='user,class,carStop,school']
  * @returns {Object}
  */
-function getStudentByUser (db, userID, extra = 'user,class,carStop') {
+function getStudentByUser (db, userID, extra = 'user,class,carStop,school') {
   return db.collection(process.env.STUDENT_COLLECTION)
     .findOne({ isDeleted: false, userID })
     .then((v) => {
@@ -111,10 +200,10 @@ function getStudentByUser (db, userID, extra = 'user,class,carStop') {
  * Get students by ids.
  * @param {Object} db
  * @param {Array} studentIDs
- * @param {string} [extra='user,class,carStop']
+ * @param {string} [extra='user,class,carStop,school']
  * @returns {Object}
  */
-function getStudentsByIDs (db, studentIDs, extra = 'user,class,carStop') {
+function getStudentsByIDs (db, studentIDs, extra = 'user,class,carStop,school') {
   return db.collection(process.env.STUDENT_COLLECTION)
     .find({ isDeleted: false, _id: { $in: studentIDs } })
     .toArray()
@@ -124,32 +213,6 @@ function getStudentsByIDs (db, studentIDs, extra = 'user,class,carStop') {
       return addExtra(db, v, extra)
     })
     .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
-}
-
-/**
- * Get students by class.
- * @param {Object} db
- * @param {(string|Array)} classID
- * @param {Object} query
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='user,class,carStop']
- * @returns {Object}
- */
-function getStudentsByClass (db, classID, query, limit, page, extra = 'user,class,carStop') {
-  return parseQuery(db, query)
-    .then(() => (
-      db.collection(process.env.STUDENT_COLLECTION)
-        .find({ $and: [{ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID }, query] })
-        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-        .toArray()
-        .then((v) => {
-          if (v.length === 0) return []
-          if (!extra) return v
-          return addExtra(db, v, extra)
-        })
-    ))
 }
 
 /**
@@ -165,7 +228,8 @@ function addExtra (db, docs, extra) {
     let userIDs = []
     let classIDs = []
     let carStopIDs = []
-    docs.forEach(({ userID, classID, carStopID }) => {
+    let schoolIDs = []
+    docs.forEach(({ userID, classID, carStopID, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
       }
@@ -175,10 +239,14 @@ function addExtra (db, docs, extra) {
       if (e.includes('carStop') && carStopID != null) {
         carStopIDs.push(ObjectID(carStopID))
       }
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
+      }
     })
     let users
     let classes
     let carStops
+    let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -201,10 +269,17 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID, classID, carStopID } = c
+          let { userID, classID, carStopID, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
           }
@@ -214,12 +289,15 @@ function addExtra (db, docs, extra) {
           if (carStops !== undefined && carStopID != null) {
             c.carStop = carStops[carStopID]
           }
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
+          }
         })
         return docs
       })
   }
   let doc = docs
-  let { userID, classID, carStopID } = doc
+  let { userID, classID, carStopID, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
@@ -239,6 +317,13 @@ function addExtra (db, docs, extra) {
     let p = getCarStopByID(db, carStopID)
       .then((v) => {
         doc.carStop = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
       })
     arr.push(p)
   }
@@ -319,6 +404,24 @@ function deleteStudentByUser (db, userID) {
 }
 
 /**
+ * Delete students by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function deleteStudentsBySchool (db, schoolID) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteStudent(db, String(_id))
+      })
+    })
+}
+
+/**
  * Delete students by class.
  * @param {Object} db
  * @param {string} classID
@@ -374,68 +477,30 @@ function updateStudentsDeleteCarStop (db, carStopID) {
     )
 }
 
-/**
- * Count students by class.
- * @param {Object} db
- * @param {(string|Array)} classID
- * @param {Object} query
- * @returns {Object}
- */
-function countStudentsByClass (db, classID, query) {
-  return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ $and: [{ isDeleted: false, classID: Array.isArray(classID) ? { $in: classID } : classID }, query] })
-    .count()
-}
-
-/**
- * Get students by school.
- * @param {Object} db
- * @param {string} schoolID
- * @param {Object} query
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='user,class,carStop']
- * @returns {Object}
- */
-function getStudentsBySchool (db, schoolID, query, limit, page, extra = 'user,class,carStop') {
-  return getClassIDsBySchool(db, schoolID)
-    .then(classIDs => getStudentsByClass(db, classIDs, query, limit, page, extra))
-}
-
-/**
- * Count students by school.
- * @param {Object} db
- * @param {string} schoolID
- * @param {Object} query
- * @returns {Object}
- */
-function countStudentsBySchool (db, schoolID, query) {
-  return getClassIDsBySchool(db, schoolID)
-    .then(classIDs => countStudentsByClass(db, classIDs, query))
-}
-
 module.exports = {
   createStudent,
   countStudents,
+  countStudentsBySchool,
+  countStudentsByClass,
   getStudents,
+  getStudentsBySchool,
+  getStudentsByClass,
   getStudentByID,
   getStudentByUser,
   getStudentsByIDs,
-  getStudentsByClass,
   updateStudent,
   deleteStudent,
   deleteStudentByUser,
+  deleteStudentsBySchool,
   deleteStudentsByClass,
   getStudentsCarStopIDs,
   updateStudentsDeleteCarStop,
-  countStudentsByClass,
-  getStudentsBySchool,
-  countStudentsBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
-const { getClassesByIDs, getClassByID, getClassIDsBySchool } = require('./Class')
+const { getClassesByIDs, getClassByID } = require('./Class')
 const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { updateStudentListsRemoveStudentCarStop, updateStudentListsReplaceCarStop } = require('./StudentList')
 const { updateTripsRemoveStudent } = require('./Trip')
-const parseQuery = require('./parseQuery')
