@@ -13,6 +13,7 @@ const FeedbackModel = require('./../models/Feedback')
 const GPSModel = require('./../models/GPS')
 const NannyModel = require('./../models/Nanny')
 const ParentModel = require('./../models/Parent')
+const ParentRequestModel = require('./../models/ParentRequest')
 const RouteModel = require('./../models/Route')
 const StudentModel = require('./../models/Student')
 const StudentListModel = require('./../models/StudentList')
@@ -732,13 +733,100 @@ function initOAuth2 (db, app) {
   })
 
   soas2.layerAnd((req, next, cancel) => {
-    return req.token.type === USER_TYPE_ADMINISTRATOR
-    || req.token.type === USER_TYPE_PARENT
-      ? next()
-      : cancel()
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
-    routes: ['/ParentRequest(/**)?'],
-    method: ['get', 'post', 'put', 'delete'],
+    routes: ['/ParentRequest/Log', '/ParentRequest/:parentRequestID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_PARENT) {
+      return ParentModel.getParentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.parentID = String(v._id)
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return TeacherModel.getTeacherByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.teacherID = String(v._id)
+          return next()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/ParentRequest', '/ParentRequest/:page(\\d+)'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_PARENT) {
+      return ParentModel.getParentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.schoolID = v.schoolID
+          req.parentID = String(v._id)
+          return next()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/ParentRequest'],
+    method: ['post'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return ParentRequestModel.getParentRequestByID(req.app.locals.db, req.params.parentRequestID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_PARENT) {
+      return ParentRequestModel.getParentRequestByID(req.app.locals.db, req.params.parentRequestID, 'parent')
+        .then((c) => {
+          if (c !== null && c.parent !== null && c.parent.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/ParentRequest/:parentRequestID([0-9a-fA-F]{24})'],
+    method: ['get', 'put', 'delete'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
