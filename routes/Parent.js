@@ -5,9 +5,10 @@ const ParentModel = require('./../models/Parent')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, studentID } = req.body
+  let { username, password, image, name, phone, email, studentIDs, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  ParentModel.createParent(db, username, password, image, name, phone, email, studentID)
+  ParentModel.createParent(db, username, password, image, name, phone, email, studentIDs, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,12 +29,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return ParentModel.getParentsBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return ParentModel.countParentsBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  ParentModel.getParents(db, 1, extra)
+  ParentModel.getParents(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return ParentModel.countParents(db)
+      return ParentModel.countParents(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -45,15 +61,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return ParentModel.getParentsBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return ParentModel.countParentsBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    ParentModel.getParents(db, page, extra)
+    ParentModel.getParents(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return ParentModel.countParents(db)
+        return ParentModel.countParents(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -78,14 +109,16 @@ router.get('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { parentID } = req.params
-  let { studentID, image, name, phone, email } = req.body
+  let { studentIDs, schoolID, image, name, phone, email } = req.body
   let obj = {}
-  if (studentID !== undefined) obj.studentID = studentID
+  if (studentIDs !== undefined) obj.studentIDs = studentIDs
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let obj1 = {}
   if (image !== undefined) obj1.image = image
   if (name !== undefined) obj1.name = name
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
+  if (schoolID !== undefined) obj1.schoolID = schoolID
   let { db } = req.app.locals
   ParentModel.updateParent(db, parentID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {

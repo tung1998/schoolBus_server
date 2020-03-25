@@ -11,16 +11,18 @@ const USER_TYPE_PARENT = 3
  * @param {string} name
  * @param {string} phone
  * @param {string} email
- * @param {string} studentID
+ * @param {Array} studentIDs
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createParent (db, username, password, image, name, phone, email, studentID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_PARENT)
+function createParent (db, username, password, image, name, phone, email, studentIDs, schoolID) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_PARENT, schoolID)
     .then(({ insertedId }) => (
       db.collection(process.env.PARENT_COLLECTION)
         .insertOne({
           userID: String(insertedId),
-          studentID,
+          studentIDs,
+          schoolID,
           createdTime: Date.now(),
           updatedTime: Date.now(),
           isDeleted: false,
@@ -31,42 +33,93 @@ function createParent (db, username, password, image, name, phone, email, studen
 /**
  * Count parents.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countParents (db) {
-  return db.collection(process.env.PARENT_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countParents (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.PARENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count parents by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countParentsBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.PARENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get parents.
  * @param {Object} db
+ * @param {Object} query
+ * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user,student,school']
  * @returns {Object}
  */
-function getParents (db, page, extra = 'user,student') {
-  return db.collection(process.env.PARENT_COLLECTION)
-    .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getParents (db, query, limit, page, extra = 'user,student,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.PARENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get parents by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student,school']
+ * @returns {Object}
+ */
+function getParentsBySchool (db, schoolID, query, limit, page, extra = 'user,student,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.PARENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
  * Get parent by id.
  * @param {Object} db
  * @param {string} parentID
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user,student,school']
  * @returns {Object}
  */
-function getParentByID (db, parentID, extra = 'user,student') {
+function getParentByID (db, parentID, extra = 'user,student,school') {
   return db.collection(process.env.PARENT_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(parentID) })
     .then((v) => {
@@ -80,10 +133,10 @@ function getParentByID (db, parentID, extra = 'user,student') {
  * Get parent by user.
  * @param {Object} db
  * @param {string} userID
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user,student,school']
  * @returns {Object}
  */
-function getParentByUser (db, userID, extra = 'user,student') {
+function getParentByUser (db, userID, extra = 'user,student,school') {
   return db.collection(process.env.PARENT_COLLECTION)
     .findOne({ isDeleted: false, userID })
     .then((v) => {
@@ -97,10 +150,10 @@ function getParentByUser (db, userID, extra = 'user,student') {
  * Get parents by ids.
  * @param {Object} db
  * @param {Array} parentIDs
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user,student,school']
  * @returns {Object}
  */
-function getParentsByIDs (db, parentIDs, extra = 'user,student') {
+function getParentsByIDs (db, parentIDs, extra = 'user,student,school') {
   return db.collection(process.env.PARENT_COLLECTION)
     .find({ isDeleted: false, _id: { $in: parentIDs } })
     .toArray()
@@ -124,16 +177,21 @@ function addExtra (db, docs, extra) {
   if (Array.isArray(docs)) {
     let userIDs = []
     let studentIDs = []
-    docs.forEach(({ userID, studentID }) => {
+    let schoolIDs = []
+    docs.forEach(({ userID, studentIDs: sIDs, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
       }
-      if (e.includes('student') && studentID != null) {
-        studentIDs.push(ObjectID(studentID))
+      if (e.includes('student') && Array.isArray(sIDs)) {
+        studentIDs.push(...sIDs.map(ObjectID))
+      }
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
       }
     })
     let users
     let students
+    let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -149,22 +207,32 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID, studentID } = c
+          let { userID, studentIDs: sIDs, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
           }
-          if (students !== undefined && studentID != null) {
-            c.student = students[studentID]
+          if (students !== undefined && Array.isArray(sIDs)) {
+            c.students = sIDs.map(c => students[c])
+          }
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { userID, studentID } = doc
+  let { userID, studentIDs, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
@@ -173,10 +241,17 @@ function addExtra (db, docs, extra) {
       })
     arr.push(p)
   }
-  if (e.includes('student') && studentID != null) {
-    let p = getStudentByID(db, studentID)
+  if (e.includes('student') && Array.isArray(studentIDs)) {
+    let p = getStudentsByIDs(db, studentIDs.map(ObjectID))
       .then((v) => {
-        doc.student = v
+        doc.students = studentIDs.map(c => v[c])
+      })
+    arr.push(p)
+  }
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
       })
     arr.push(p)
   }
@@ -246,38 +321,39 @@ function deleteParentByUser (db, userID) {
 }
 
 /**
- * Delete parent by student.
+ * Delete parents by school.
  * @param {Object} db
- * @param {string} studentID
+ * @param {string} schoolID
  * @returns {Object}
  */
-function deleteParentByStudent (db, studentID) {
+function deleteParentsBySchool (db, schoolID) {
   return db.collection(process.env.PARENT_COLLECTION)
-    .findAndModify(
-      { isDeleted: false, studentID },
-      null,
-      { $set: { isDeleted: true } },
-      { fields: { _id: 0, userID: 1 } },
-    )
-    .then(({ lastErrorObject: { updatedExisting }, value }) => {
-      if (updatedExisting) {
-        deleteUser(db, value.userID, false)
-      }
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteParent(db, String(_id))
+      })
     })
 }
 
 module.exports = {
   createParent,
   countParents,
+  countParentsBySchool,
   getParents,
+  getParentsBySchool,
   getParentByID,
   getParentByUser,
   getParentsByIDs,
   updateParent,
   deleteParent,
   deleteParentByUser,
-  deleteParentByStudent,
+  deleteParentsBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
-const { getStudentsByIDs, getStudentByID } = require('./Student')
+const { getStudentsByIDs } = require('./Student')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
