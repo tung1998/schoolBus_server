@@ -7,7 +7,8 @@ const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { routeID, attendance, type, status, note, accident, startTime, endTime } = req.body
+  let { routeID, attendance, type, status, note, accident, startTime, endTime, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   if (routeID === undefined) return res.status(400).send({ message: 'Missing routeID' })
   RouteModel.getRouteByID(db, routeID, 'studentList')
     .then((v) => {
@@ -16,7 +17,7 @@ router.post('/', (req, res, next) => {
       let students = studentList == null
         ? []
         : studentList.studentIDs.map(c => ({ studentID: c, status: 0 }))
-      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime)
+      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
           return LogModel.createLog(
@@ -38,12 +39,41 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.studentID !== undefined) {
+    let result = {}
+    return TripModel.getTripsByStudent(db, req.studentID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return TripModel.countTripsByStudent(db, req.studentID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return TripModel.getTripsBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return TripModel.countTripsBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  TripModel.getTrips(db, 1, extra)
+  TripModel.getTrips(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return TripModel.countTrips(db)
+      return TripModel.countTrips(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -55,15 +85,44 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.studentID !== undefined) {
+      let result = {}
+      return TripModel.getTripsByStudent(db, req.studentID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return TripModel.countTripsByStudent(db, req.studentID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return TripModel.getTripsBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return TripModel.countTripsBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    TripModel.getTrips(db, page, extra)
+    TripModel.getTrips(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return TripModel.countTrips(db)
+        return TripModel.countTrips(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -72,6 +131,28 @@ router.get('/:page(\\d+)', (req, res, next) => {
       })
       .catch(next)
   }
+})
+
+router.get('/byTime', (req, res, next) => {
+  let { db } = req.app.locals
+  let { startTime, endTime, extra, ...query } = req.query
+  startTime = Number(startTime)
+  endTime = Number(endTime)
+  TripModel.getTripsByTime(db, startTime, endTime, query, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
+router.get('/next', (req, res, next) => {
+  if (req.driverID !== undefined) {
+    return TripModel.getNextTripByDriver(req.app.locals.db, req.driverID, req.query.extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
+  return res.status(404).send({ message: 'Not Found' })
 })
 
 router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
@@ -88,7 +169,7 @@ router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
-  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime } = req.body
+  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID } = req.body
   let obj = {}
   if (carID !== undefined) obj.carID = carID
   if (driverID !== undefined) obj.driverID = driverID
@@ -102,6 +183,7 @@ router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   if (startTime !== undefined) obj.startTime = startTime
   if (endTime !== undefined) obj.endTime = endTime
   if (students !== undefined) obj.students = students
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   TripModel.updateTrip(db, tripID, obj)
     .then(({ matchedCount }) => {
@@ -220,16 +302,6 @@ router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/status
         )
       }
     })
-    .catch(next)
-})
-
-router.get('/byTime', (req, res, next) => {
-  let { db } = req.app.locals
-  let { startTime, endTime, extra } = req.query
-  startTime = Number(startTime)
-  endTime = Number(endTime)
-  TripModel.getTripsByTime(db, startTime, endTime, extra)
-    .then(v => res.send(v))
     .catch(next)
 })
 

@@ -1152,22 +1152,73 @@ function initOAuth2 (db, app) {
   })
 
   soas2.layerAnd((req, next, cancel) => {
-    return req.token.type === USER_TYPE_ADMINISTRATOR
-      ? next()
-      : cancel()
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
-    routes: ['/Trip', '/Trip/:page(\\d+)', '/Trip/byTime', '/Trip/Log', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
+    routes: ['/Trip/byTime', '/Trip/Log', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
-  }).defend({
-    routes: ['/Trip'],
-    method: ['post'],
-  }).defend({
-    routes: ['/Trip/:tripID([0-9a-fA-F]{24})'],
-    method: ['delete'],
   })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return next()
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_STUDENT) {
+      return StudentModel.getStudentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.studentID = String(v._id)
+          return next()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Trip', '/Trip/:page(\\d+)'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Trip'],
+    method: ['post'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return TripModel.getTripByID(req.app.locals.db, req.params.tripID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
     }
     if (req.token.type === USER_TYPE_NANNY) {
       return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'nanny')
@@ -1195,6 +1246,39 @@ function initOAuth2 (db, app) {
       '/Trip/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/image',
     ],
     method: ['put'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_DRIVER) {
+      return DriverModel.getDriverByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.driverID = String(v._id)
+          return next()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Trip/next'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return TripModel.getTripByID(req.app.locals.db, req.params.tripID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Trip/:tripID([0-9a-fA-F]{24})'],
+    method: ['delete'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
