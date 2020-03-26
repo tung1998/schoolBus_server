@@ -1,3 +1,5 @@
+const NUMBER_FIELDS = ['adminType', 'status', 'volume', 'price', 'type', 'seatNumber', 'fuelType', 'fuelCapacity', 'maintenanceDay', 'maintenanceDistance', 'stopType', 'reachTime', 'IDIssueDate', 'DLIssueDate', 'time', 'toll', 'startTime', 'endTime', 'userType', 'liftTime']
+
 /**
  * Parse query.
  * @param {Object} db
@@ -5,7 +7,7 @@
  * @returns {Object}
  */
 function parseQuery (db, query) {
-  if (query === undefined) return Promise.resolve({})
+  if (query === undefined) return Promise.resolve()
   let temp = {}
   Object.entries(query).forEach(([k, v]) => {
     k = decodeURIComponent(k)
@@ -34,7 +36,10 @@ function parseQuery (db, query) {
   return Promise.all(arr)
     .then(() => {
       Object.entries(query).forEach(([k, v]) => {
-        if (typeof v === 'string') query[k] = { $regex: v, $options: 'i' }
+        if (typeof v === 'string') {
+          if (NUMBER_FIELDS.includes(k)) query[k] = { $eq: Number(v) }
+          else query[k] = { $regex: v, $options: 'i' }
+        }
       })
       return query
     })
