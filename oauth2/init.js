@@ -375,9 +375,33 @@ function initOAuth2 (db, app) {
           return cancel()
         })
     }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return TeacherModel.getTeacherByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.teacherID = String(v._id)
+          return next()
+        })
+    }
     return cancel()
   }).defend({
-    routes: ['/Class', '/Class/:page(\\d+)', '/Class/bySchool'],
+    routes: ['/Class', '/Class/:page(\\d+)'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Class/bySchool'],
     method: ['get'],
   }).defend({
     routes: ['/Class'],

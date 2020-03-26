@@ -23,33 +23,125 @@ function createClass (db, name, schoolID, teacherID) {
 /**
  * Count classes.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countClasses (db) {
-  return db.collection(process.env.CLASS_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countClasses (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.CLASS_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count classes by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countClassesBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.CLASS_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count classes by teacher.
+ * @param {Object} db
+ * @param {string} teacherID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countClassesByTeacher (db, teacherID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.CLASS_COLLECTION)
+        .find({ $and: [{ isDeleted: false, teacherID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get classes.
  * @param {Object} db
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
  * @param {string} [extra='school,teacher']
  * @returns {Object}
  */
-function getClasses (db, limit, page, extra = 'school,teacher') {
-  return db.collection(process.env.CLASS_COLLECTION)
-    .find({ isDeleted: false })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getClasses (db, query, limit, page, extra = 'school,teacher') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.CLASS_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get classes by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='school,teacher']
+ * @returns {Object}
+ */
+function getClassesBySchool (db, schoolID, query, limit, page, extra = 'school,teacher') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.CLASS_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get classes by teacher.
+ * @param {Object} db
+ * @param {string} teacherID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='school,teacher']
+ * @returns {Object}
+ */
+function getClassesByTeacher (db, teacherID, query, limit, page, extra = 'school,teacher') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.CLASS_COLLECTION)
+        .find({ $and: [{ isDeleted: false, teacherID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
@@ -86,28 +178,6 @@ function getClassesByIDs (db, classIDs, extra = 'school,teacher') {
       return addExtra(db, v, extra)
     })
     .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
-}
-
-/**
- * Get classes by school.
- * @param {Object} db
- * @param {string} schoolID
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='school,teacher']
- * @returns {Object}
- */
-function getClassesBySchool (db, schoolID, limit, page, extra = 'school,teacher') {
-  return db.collection(process.env.CLASS_COLLECTION)
-    .find({ isDeleted: false, schoolID })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
 }
 
 /**
@@ -218,7 +288,7 @@ function deleteClass (db, classID) {
 }
 
 /**
- * Delete classes By school.
+ * Delete classes by school.
  * @param {Object} db
  * @param {string} schoolID
  * @returns {Object}
@@ -235,46 +305,22 @@ function deleteClassesBySchool (db, schoolID) {
     })
 }
 
-/**
- * Count classes by school.
- * @param {Object} db
- * @param {string} schoolID
- * @returns {Object}
- */
-function countClassesBySchool (db, schoolID) {
-  return db.collection(process.env.CLASS_COLLECTION)
-    .find({ isDeleted: false, schoolID })
-    .count()
-}
-
-/**
- * Get classIDs by school.
- * @param {Object} db
- * @param {string} schoolID
- * @returns {Object}
- */
-function getClassIDsBySchool (db, schoolID) {
-  return db.collection(process.env.CLASS_COLLECTION)
-    .find({ isDeleted: false, schoolID })
-    .project({ _id: 1 })
-    .toArray()
-    .then(v => v.map(({ _id }) => String(_id)))
-}
-
 module.exports = {
   createClass,
   countClasses,
+  countClassesBySchool,
+  countClassesByTeacher,
   getClasses,
+  getClassesBySchool,
+  getClassesByTeacher,
   getClassByID,
   getClassesByIDs,
-  getClassesBySchool,
   updateClass,
   deleteClass,
   deleteClassesBySchool,
-  countClassesBySchool,
-  getClassIDsBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { getTeachersByIDs, getTeacherByID } = require('./Teacher')
 const { deleteStudentsByClass } = require('./Student')
