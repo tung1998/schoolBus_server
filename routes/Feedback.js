@@ -169,6 +169,33 @@ router.put('/:feedbackID([0-9a-fA-F]{24})', (req, res, next) => {
     .catch(next)
 })
 
+router.put('/:feedbackID([0-9a-fA-F]{24})/response', (req, res, next) => {
+  let { feedbackID } = req.params
+  let { responseContent } = req.body
+  let responseUserID = req.token && req.token.userID
+  let { db } = req.app.locals
+  FeedbackModel.updateFeedbackResponse(db, feedbackID, responseUserID, responseContent)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update feedback response: _id = ${feedbackID}`,
+          Date.now(),
+          1,
+          req.body,
+          'feedback',
+          feedbackID,
+        )
+      }
+    })
+    .catch(next)
+})
+
 router.delete('/:feedbackID([0-9a-fA-F]{24})', (req, res, next) => {
   let { feedbackID } = req.params
   let { db } = req.app.locals

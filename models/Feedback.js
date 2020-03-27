@@ -274,6 +274,22 @@ function updateFeedback (db, feedbackID, obj) {
 }
 
 /**
+ * Update feedback.
+ * @param {Object} db
+ * @param {string} feedbackID
+ * @param {string} responseUserID
+ * @param {string} responseContent
+ * @returns {Object}
+ */
+function updateFeedbackResponse (db, feedbackID, responseUserID, responseContent) {
+  return db.collection(process.env.FEEDBACK_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(feedbackID) },
+      { $set: { updatedTime: Date.now(), status: 2, responseUserID, responseContent, responseTime: Date.now() } },
+    )
+}
+
+/**
  * Delete feedback.
  * @param {Object} db
  * @param {string} feedbackID
@@ -334,6 +350,7 @@ module.exports = {
   getFeedbackByID,
   getFeedbacksByIDs,
   updateFeedback,
+  updateFeedbackResponse,
   deleteFeedback,
   deleteFeedbacksBySchool,
   deleteFeedbacksByUser,
