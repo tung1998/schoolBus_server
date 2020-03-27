@@ -289,6 +289,32 @@ function getNextTripByStudent (db, studentID, extra = 'car,driver,nanny,route,st
 }
 
 /**
+ * Get trips by driver.
+ * @param {Object} db
+ * @param {string} driverID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getTripsByDriver (db, driverID, query, limit, page, extra = 'car,driver,nanny,route,student,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TRIP_COLLECTION)
+        .find({ $and: [{ isDeleted: false, driverID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -583,6 +609,7 @@ module.exports = {
   getNextTripByDriver,
   getNextTripByNanny,
   getNextTripByStudent,
+  getTripsByDriver,
   updateTrip,
   updateTripStatus,
   updateTripStudentStatus,

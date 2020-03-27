@@ -171,6 +171,20 @@ router.get('/next', (req, res, next) => {
   return res.status(404).send({ message: 'Not Found' })
 })
 
+router.get('/history', (req, res, next) => {
+  if (req.driverID !== undefined) {
+    let { limit, page, extra, ...query } = req.query
+    limit = Number(limit)
+    page = Number(page)
+    return TripModel.getTripsByDriver(req.app.locals.db, req.driverID, query, limit, page, extra)
+      .then((v) => {
+        res.send(v)
+      })
+      .catch(next)
+  }
+  return res.status(404).send({ message: 'Not Found' })
+})
+
 router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
   let { db } = req.app.locals
