@@ -1296,6 +1296,10 @@ function initOAuth2 (db, app) {
     routes: ['/Trip/history'],
     method: ['get'],
   })
+  soas2.defend({
+    routes: ['/Trip/byStudent'],
+    method: ['get'],
+  })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
       return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)

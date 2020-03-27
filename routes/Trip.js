@@ -185,6 +185,16 @@ router.get('/history', (req, res, next) => {
   return res.status(404).send({ message: 'Not Found' })
 })
 
+router.get('/byStudent', (req, res, next) => {
+  let { db } = req.app.locals
+  let { studentID, limit, page, extra, ...query } = req.query
+  TripModel.getTripsByStudent(db, studentID, query, limit, page, extra)
+    .then((v) => {
+      res.send(v)
+    })
+    .catch(next)
+})
+
 router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
   let { db } = req.app.locals
