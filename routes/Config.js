@@ -5,9 +5,10 @@ const ConfigModel = require('./../models/Config')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { name, value } = req.body
+  let { name, value, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  ConfigModel.createConfig(db, name, value)
+  ConfigModel.createConfig(db, name, value, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,11 +29,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return ConfigModel.getConfigsBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return ConfigModel.countConfigsBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  ConfigModel.getConfigs(db, 1)
+  ConfigModel.getConfigs(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return ConfigModel.countConfigs(db)
+      return ConfigModel.countConfigs(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -44,14 +61,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return ConfigModel.getConfigsBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return ConfigModel.countConfigsBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    ConfigModel.getConfigs(db, page)
+    ConfigModel.getConfigs(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return ConfigModel.countConfigs(db)
+        return ConfigModel.countConfigs(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -65,7 +98,8 @@ router.get('/:page(\\d+)', (req, res, next) => {
 router.get('/:configID([0-9a-fA-F]{24})', (req, res, next) => {
   let { configID } = req.params
   let { db } = req.app.locals
-  ConfigModel.getConfigByID(db, configID)
+  let { extra } = req.query
+  ConfigModel.getConfigByID(db, configID, extra)
     .then((v) => {
       if (v === null) res.status(404).send({ message: 'Not Found' })
       else res.send(v)
@@ -75,10 +109,11 @@ router.get('/:configID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:configID([0-9a-fA-F]{24})', (req, res, next) => {
   let { configID } = req.params
-  let { name, value } = req.body
+  let { name, value, schoolID } = req.body
   let obj = {}
   if (name !== undefined) obj.name = name
   if (value !== undefined) obj.value = value
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   ConfigModel.updateConfig(db, configID, obj)
     .then(({ matchedCount }) => {
@@ -147,16 +182,5 @@ router.get('/:configID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .then(v => res.send(v))
     .catch(next)
 })
-
-router.get('/init', (req, res, next) => {
-  let { db } = req.app.locals
-  data.forEach((item) => {
-    ConfigModel.createConfig(db, item.name, item.value)
-  })
-  res.send({ success: true })
-})
-
-const data = [
-]
 
 module.exports = router
