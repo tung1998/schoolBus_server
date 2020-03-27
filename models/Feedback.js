@@ -79,10 +79,10 @@ function countFeedbacksByUser (db, userID, query) {
  * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,school']
+ * @param {string} [extra='user,responseUser,school']
  * @returns {Object}
  */
-function getFeedbacks (db, query, limit, page, extra = 'user,school') {
+function getFeedbacks (db, query, limit, page, extra = 'user,responseUser,school') {
   return parseQuery(db, query)
     .then(() => (
       db.collection(process.env.FEEDBACK_COLLECTION)
@@ -105,10 +105,10 @@ function getFeedbacks (db, query, limit, page, extra = 'user,school') {
  * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,school']
+ * @param {string} [extra='user,responseUser,school']
  * @returns {Object}
  */
-function getFeedbacksBySchool (db, schoolID, query, limit, page, extra = 'user,school') {
+function getFeedbacksBySchool (db, schoolID, query, limit, page, extra = 'user,responseUser,school') {
   return parseQuery(db, query)
     .then(() => (
       db.collection(process.env.FEEDBACK_COLLECTION)
@@ -131,10 +131,10 @@ function getFeedbacksBySchool (db, schoolID, query, limit, page, extra = 'user,s
  * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,school']
+ * @param {string} [extra='user,responseUser,school']
  * @returns {Object}
  */
-function getFeedbacksByUser (db, userID, query, limit, page, extra = 'user,school') {
+function getFeedbacksByUser (db, userID, query, limit, page, extra = 'user,responseUser,school') {
   return parseQuery(db, query)
     .then(() => (
       db.collection(process.env.FEEDBACK_COLLECTION)
@@ -154,10 +154,10 @@ function getFeedbacksByUser (db, userID, query, limit, page, extra = 'user,schoo
  * Get feedback by id.
  * @param {Object} db
  * @param {string} feedbackID
- * @param {string} [extra='user,school']
+ * @param {string} [extra='user,responseUser,school']
  * @returns {Object}
  */
-function getFeedbackByID (db, feedbackID, extra = 'user,school') {
+function getFeedbackByID (db, feedbackID, extra = 'user,responseUser,school') {
   return db.collection(process.env.FEEDBACK_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(feedbackID) })
     .then((v) => {
@@ -171,10 +171,10 @@ function getFeedbackByID (db, feedbackID, extra = 'user,school') {
  * Get feedbacks by ids.
  * @param {Object} db
  * @param {Array} feedbackIDs
- * @param {string} [extra='user,school']
+ * @param {string} [extra='user,responseUser,school']
  * @returns {Object}
  */
-function getFeedbacksByIDs (db, feedbackIDs, extra = 'user,school') {
+function getFeedbacksByIDs (db, feedbackIDs, extra = 'user,responseUser,school') {
   return db.collection(process.env.FEEDBACK_COLLECTION)
     .find({ isDeleted: false, _id: { $in: feedbackIDs } })
     .toArray()
@@ -197,22 +197,34 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let userIDs = []
+    let responseUserIDs = []
     let schoolIDs = []
-    docs.forEach(({ userID, schoolID }) => {
+    docs.forEach(({ userID, responseUserID, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
+      }
+      if (e.includes('responseUser') && responseUserID != null) {
+        responseUserIDs.push(ObjectID(responseUserID))
       }
       if (e.includes('school') && schoolID != null) {
         schoolIDs.push(ObjectID(schoolID))
       }
     })
     let users
+    let responseUsers
     let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
         .then((v) => {
           users = v
+        })
+      arr.push(p)
+    }
+    if (responseUserIDs.length > 0) {
+      let p = getUsersByIDs(db, responseUserIDs)
+        .then((v) => {
+          responseUsers = v
         })
       arr.push(p)
     }
@@ -226,9 +238,12 @@ function addExtra (db, docs, extra) {
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID, schoolID } = c
+          let { userID, responseUserID, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
+          }
+          if (responseUsers !== undefined && responseUserID != null) {
+            c.responseUser = responseUsers[responseUserID]
           }
           if (schools !== undefined && schoolID != null) {
             c.school = schools[schoolID]
@@ -238,12 +253,19 @@ function addExtra (db, docs, extra) {
       })
   }
   let doc = docs
-  let { userID, schoolID } = doc
+  let { userID, responseUserID, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
       .then((v) => {
         doc.user = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('responseUser') && responseUserID != null) {
+    let p = getUserByID(db, responseUserID)
+      .then((v) => {
+        doc.responseUser = v
       })
     arr.push(p)
   }
