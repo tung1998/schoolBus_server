@@ -477,6 +477,20 @@ function updateStudentsDeleteCarStop (db, carStopID) {
     )
 }
 
+/**
+ * Get studentIDs by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function getStudentIDsBySchool (db, schoolID) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then(v => v.map(({ _id }) => String(_id)))
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -495,6 +509,7 @@ module.exports = {
   deleteStudentsByClass,
   getStudentsCarStopIDs,
   updateStudentsDeleteCarStop,
+  getStudentIDsBySchool,
 }
 
 const parseQuery = require('./parseQuery')

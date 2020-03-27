@@ -731,26 +731,15 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Parent', '/Parent/:page(\\d+)'],
     method: ['get'],
-  }).defend({
-    routes: ['/Parent'],
-    method: ['post'],
   })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
-      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
-        .then((v) => {
-          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
-          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
-            return ParentModel.getParentByID(req.app.locals.db, req.params.parentID, null)
-              .then((c) => {
-                if (c !== null && c.schoolID === v.schoolID) return next()
-                return cancel()
-              })
-          }
-          return cancel()
-        })
+      return next()
     }
     return cancel()
+  }).defend({
+    routes: ['/Parent'],
+    method: ['post'],
   }).defend({
     routes: ['/Parent/:parentID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
