@@ -1264,6 +1264,20 @@ function initOAuth2 (db, app) {
           return next()
         })
     }
+    if (req.token.type === USER_TYPE_NANNY) {
+      return NannyModel.getNannyByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.nannyID = String(v._id)
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_STUDENT) {
+      return StudentModel.getStudentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.studentID = String(v._id)
+          return next()
+        })
+    }
     return cancel()
   }).defend({
     routes: ['/Trip/next'],

@@ -249,6 +249,46 @@ function getNextTripByDriver (db, driverID, extra = 'car,driver,nanny,route,stud
 }
 
 /**
+ * Get next trip by nanny.
+ * @param {Object} db
+ * @param {string} nannyID
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getNextTripByNanny (db, nannyID, extra = 'car,driver,nanny,route,student,school') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, nannyID, startTime: { $gt: Date.now() } })
+    .sort({ startTime: 1 })
+    .limit(1)
+    .toArray()
+    .then(([v]) => {
+      if (v === undefined) return undefined
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get next trip by student.
+ * @param {Object} db
+ * @param {string} studentID
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getNextTripByStudent (db, studentID, extra = 'car,driver,nanny,route,student,school') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, 'students.studentID': studentID, startTime: { $gt: Date.now() } })
+    .sort({ startTime: 1 })
+    .limit(1)
+    .toArray()
+    .then(([v]) => {
+      if (v === undefined) return undefined
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -541,6 +581,8 @@ module.exports = {
   getTripsByIDs,
   getTripsByTime,
   getNextTripByDriver,
+  getNextTripByNanny,
+  getNextTripByStudent,
   updateTrip,
   updateTripStatus,
   updateTripStudentStatus,

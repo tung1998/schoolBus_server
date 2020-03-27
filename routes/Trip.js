@@ -152,6 +152,22 @@ router.get('/next', (req, res, next) => {
       })
       .catch(next)
   }
+  if (req.nannyID !== undefined) {
+    return TripModel.getNextTripByNanny(req.app.locals.db, req.nannyID, req.query.extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
+  if (req.studentID !== undefined) {
+    return TripModel.getNextTripByStudent(req.app.locals.db, req.studentID, req.query.extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
   return res.status(404).send({ message: 'Not Found' })
 })
 
