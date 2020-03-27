@@ -21,7 +21,7 @@ function parseQuery (db, query) {
     }
   })
   let arr = Object.entries(temp).map(([key, value]) => {
-    let collectionName = process.env[`${key.replace(/(?<=[a-z])([A-Z])/g, '_$1').toUpperCase()}_COLLECTION`]
+    let collectionName = toCollectionName(key)
     return parseQuery(db, value)
       .then(v => (
         db.collection(collectionName)
@@ -43,6 +43,17 @@ function parseQuery (db, query) {
       })
       return query
     })
+}
+
+/**
+ * To collection name.
+ * @param {string} str
+ * @returns {string}
+ */
+function toCollectionName (str) {
+  if (str === 'startCarStop' || str === 'endCarStop') return process.env.CAR_STOP_COLLECTION
+  if (str === 'responseUser') return process.env.USER_COLLECTION
+  return process.env[`${str.replace(/.+\.(?=[^.]+$)/, '').replace(/(?<=[a-z])([A-Z])/g, '_$1').toUpperCase()}_COLLECTION`]
 }
 
 module.exports = parseQuery
