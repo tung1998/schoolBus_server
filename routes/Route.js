@@ -5,9 +5,10 @@ const RouteModel = require('./../models/Route')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID, name, startTime } = req.body
+  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  RouteModel.createRoute(db, requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID, name, startTime)
+  RouteModel.createRoute(db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,13 +29,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return RouteModel.getRoutesBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return RouteModel.countRoutesBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  RouteModel.getRoutes(db, limit, 1, extra)
+  RouteModel.getRoutes(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return RouteModel.countRoutes(db)
+      return RouteModel.countRoutes(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -46,16 +61,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
-  let limit = Number(req.query.limit)
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return RouteModel.getRoutesBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return RouteModel.countRoutesBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    RouteModel.getRoutes(db, limit, page, extra)
+    RouteModel.getRoutes(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return RouteModel.countRoutes(db)
+        return RouteModel.countRoutes(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -80,11 +109,10 @@ router.get('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   let { routeID } = req.params
-  let { requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID, name, startTime } = req.body
+  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID } = req.body
   let obj = {}
-  if (requireCarStop !== undefined) obj.requireCarStop = requireCarStop
-  if (pickupCarStop !== undefined) obj.pickupCarStop = pickupCarStop
-  if (takeoffCarStop !== undefined) obj.takeoffCarStop = takeoffCarStop
+  if (startCarStopID !== undefined) obj.startCarStopID = startCarStopID
+  if (endCarStopID !== undefined) obj.endCarStopID = endCarStopID
   if (toll !== undefined) obj.toll = toll
   if (carID !== undefined) obj.carID = carID
   if (driverID !== undefined) obj.driverID = driverID
@@ -92,6 +120,7 @@ router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   if (studentListID !== undefined) obj.studentListID = studentListID
   if (name !== undefined) obj.name = name
   if (startTime !== undefined) obj.startTime = startTime
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   RouteModel.updateRoute(db, routeID, obj)
     .then(({ matchedCount }) => {

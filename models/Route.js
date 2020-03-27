@@ -3,9 +3,8 @@ const { ObjectID } = require('mongodb')
 /**
  * Creats route.
  * @param {Object} db
- * @param {Array} requireCarStop
- * @param {Array} pickupCarStop
- * @param {Array} takeoffCarStop
+ * @param {string} startCarStopID
+ * @param {string} endCarStopID
  * @param {number} toll
  * @param {string} carID
  * @param {string} driverID
@@ -13,14 +12,14 @@ const { ObjectID } = require('mongodb')
  * @param {string} studentListID
  * @param {string} name
  * @param {string} startTime
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll, carID, driverID, nannyID, studentListID, name, startTime) {
+function createRoute (db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID) {
   return db.collection(process.env.ROUTE_COLLECTION)
     .insertOne({
-      requireCarStop,
-      pickupCarStop,
-      takeoffCarStop,
+      startCarStopID,
+      endCarStopID,
       toll,
       carID,
       driverID,
@@ -28,6 +27,7 @@ function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll, c
       studentListID,
       name,
       startTime,
+      schoolID,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -37,43 +37,93 @@ function createRoute (db, requireCarStop, pickupCarStop, takeoffCarStop, toll, c
 /**
  * Count routes.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countRoutes (db) {
-  return db.collection(process.env.ROUTE_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countRoutes (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ROUTE_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count routes by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countRoutesBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ROUTE_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get routes.
  * @param {Object} db
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='carStop,car,driver,nanny,studentList']
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
  * @returns {Object}
  */
-function getRoutes (db, limit, page, extra = 'carStop,car,driver,nanny,studentList') {
-  return db.collection(process.env.ROUTE_COLLECTION)
-    .find({ isDeleted: false })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getRoutes (db, query, limit, page, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ROUTE_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get routes by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
+ * @returns {Object}
+ */
+function getRoutesBySchool (db, schoolID, query, limit, page, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.ROUTE_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
  * Get route by id.
  * @param {Object} db
  * @param {string} routeID
- * @param {string} [extra='carStop,car,driver,nanny,studentList']
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
  * @returns {Object}
  */
-function getRouteByID (db, routeID, extra = 'carStop,car,driver,nanny,studentList') {
+function getRouteByID (db, routeID, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(routeID) })
     .then((v) => {
@@ -87,10 +137,10 @@ function getRouteByID (db, routeID, extra = 'carStop,car,driver,nanny,studentLis
  * Get routes by ids.
  * @param {Object} db
  * @param {Array} routeIDs
- * @param {string} [extra='carStop,car,driver,nanny,studentList']
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
  * @returns {Object}
  */
-function getRoutesByIDs (db, routeIDs, extra = 'carStop,car,driver,nanny,studentList') {
+function getRoutesByIDs (db, routeIDs, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .find({ isDeleted: false, _id: { $in: routeIDs } })
     .toArray()
@@ -112,28 +162,19 @@ function getRoutesByIDs (db, routeIDs, extra = 'carStop,car,driver,nanny,student
 function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
-    let carStopIDs = []
+    let startCarStopIDs = []
+    let endCarStopIDs = []
     let carIDs = []
     let driverIDs = []
     let nannyIDs = []
     let studentListIDs = []
-    docs.forEach(({ requireCarStop, pickupCarStop, takeoffCarStop, carID, driverID, nannyID, studentListID }) => {
-      if (e.includes('carStop')) {
-        if (Array.isArray(requireCarStop)) {
-          requireCarStop.forEach(({ carStopID }) => {
-            if (carStopID != null) carStopIDs.push(ObjectID(carStopID))
-          })
-        }
-        if (Array.isArray(pickupCarStop)) {
-          pickupCarStop.forEach(({ carStopID }) => {
-            if (carStopID != null) carStopIDs.push(ObjectID(carStopID))
-          })
-        }
-        if (Array.isArray(takeoffCarStop)) {
-          takeoffCarStop.forEach(({ carStopID }) => {
-            if (carStopID != null) carStopIDs.push(ObjectID(carStopID))
-          })
-        }
+    let schoolIDs = []
+    docs.forEach(({ startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID }) => {
+      if (e.includes('startCarStop') && startCarStopID != null) {
+        startCarStopIDs.push(ObjectID(startCarStopID))
+      }
+      if (e.includes('endCarStop') && endCarStopID != null) {
+        endCarStopIDs.push(ObjectID(endCarStopID))
       }
       if (e.includes('car') && carID != null) {
         carIDs.push(ObjectID(carID))
@@ -147,17 +188,29 @@ function addExtra (db, docs, extra) {
       if (e.includes('studentList') && studentListID != null) {
         studentListIDs.push(ObjectID(studentListID))
       }
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
+      }
     })
-    let carStops
+    let startCarStops
+    let endCarStops
     let cars
     let drivers
     let nannies
     let studentLists
+    let schools
     let arr = []
-    if (carStopIDs.length > 0) {
-      let p = getCarStopsByIDs(db, carStopIDs)
+    if (startCarStopIDs.length > 0) {
+      let p = getCarStopsByIDs(db, startCarStopIDs)
         .then((v) => {
-          carStops = v
+          startCarStops = v
+        })
+      arr.push(p)
+    }
+    if (endCarStopIDs.length > 0) {
+      let p = getCarStopsByIDs(db, endCarStopIDs)
+        .then((v) => {
+          endCarStops = v
         })
       arr.push(p)
     }
@@ -189,26 +242,22 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { requireCarStop, pickupCarStop, takeoffCarStop, carID, driverID, nannyID, studentListID } = c
-          if (carStops !== undefined) {
-            if (Array.isArray(requireCarStop)) {
-              requireCarStop.forEach((c) => {
-                if (c.carStopID != null) c.carStop = carStops[c.carStopID]
-              })
-            }
-            if (Array.isArray(pickupCarStop)) {
-              pickupCarStop.forEach((c) => {
-                if (c.carStopID != null) c.carStop = carStops[c.carStopID]
-              })
-            }
-            if (Array.isArray(takeoffCarStop)) {
-              takeoffCarStop.forEach((c) => {
-                if (c.carStopID != null) c.carStop = carStops[c.carStopID]
-              })
-            }
+          let { startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID } = c
+          if (startCarStops !== undefined && startCarStopID != null) {
+            c.startCarStop = startCarStops[startCarStopID]
+          }
+          if (endCarStops !== undefined && endCarStopID != null) {
+            c.endCarStop = endCarStops[endCarStopID]
           }
           if (cars !== undefined && carID != null) {
             c.car = cars[carID]
@@ -222,51 +271,29 @@ function addExtra (db, docs, extra) {
           if (studentLists !== undefined && studentListID != null) {
             c.studentList = studentLists[studentListID]
           }
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
+          }
         })
         return docs
       })
   }
   let doc = docs
-  let { requireCarStop, pickupCarStop, takeoffCarStop, carID, driverID, nannyID, studentListID } = doc
+  let { startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID } = doc
   let arr = []
-  if (e.includes('carStop')) {
-    let carStopIDs = []
-    if (Array.isArray(requireCarStop)) {
-      requireCarStop.forEach(({ carStopID }) => {
-        if (carStopID != null) carStopIDs.push(ObjectID(carStopID))
+  if (e.includes('startCarStop') && startCarStopID != null) {
+    let p = getCarStopByID(db, startCarStopID)
+      .then((v) => {
+        doc.startCarStop = v
       })
-    }
-    if (Array.isArray(pickupCarStop)) {
-      pickupCarStop.forEach(({ carStopID }) => {
-        if (carStopID != null) carStopIDs.push(ObjectID(carStopID))
+    arr.push(p)
+  }
+  if (e.includes('endCarStop') && endCarStopID != null) {
+    let p = getCarStopByID(db, endCarStopID)
+      .then((v) => {
+        doc.endCarStop = v
       })
-    }
-    if (Array.isArray(takeoffCarStop)) {
-      takeoffCarStop.forEach(({ carStopID }) => {
-        if (carStopID != null) carStopIDs.push(ObjectID(carStopID))
-      })
-    }
-    if (carStopIDs.length > 0) {
-      let p = getCarStopsByIDs(db, carStopIDs)
-        .then((v) => {
-          if (Array.isArray(requireCarStop)) {
-            requireCarStop.forEach((c) => {
-              if (c.carStopID != null) c.carStop = v[c.carStopID]
-            })
-          }
-          if (Array.isArray(pickupCarStop)) {
-            pickupCarStop.forEach((c) => {
-              if (c.carStopID != null) c.carStop = v[c.carStopID]
-            })
-          }
-          if (Array.isArray(takeoffCarStop)) {
-            takeoffCarStop.forEach((c) => {
-              if (c.carStopID != null) c.carStop = v[c.carStopID]
-            })
-          }
-        })
-      arr.push(p)
-    }
+    arr.push(p)
   }
   if (e.includes('car') && carID != null) {
     let p = getCarByID(db, carID)
@@ -293,6 +320,13 @@ function addExtra (db, docs, extra) {
     let p = getStudentListByID(db, studentListID)
       .then((v) => {
         doc.studentList = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
       })
     arr.push(p)
   }
@@ -329,18 +363,41 @@ function deleteRoute (db, routeID) {
     )
 }
 
+/**
+ * Delete routes by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function deleteRoutesBySchool (db, schoolID) {
+  return db.collection(process.env.ROUTE_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteRoute(db, String(_id))
+      })
+    })
+}
+
 module.exports = {
   createRoute,
   countRoutes,
+  countRoutesBySchool,
   getRoutes,
+  getRoutesBySchool,
   getRouteByID,
   getRoutesByIDs,
   updateRoute,
   deleteRoute,
+  deleteRoutesBySchool,
 }
 
-const { getCarStopsByIDs } = require('./CarStop')
+const parseQuery = require('./parseQuery')
+const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
 const { getCarsByIDs, getCarByID } = require('./Car')
 const { getDriversByIDs, getDriverByID } = require('./Driver')
 const { getNanniesByIDs, getNannyByID } = require('./Nanny')
 const { getStudentListsByIDs, getStudentListByID } = require('./StudentList')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
