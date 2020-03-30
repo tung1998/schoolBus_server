@@ -5,8 +5,8 @@ const DriverModel = require('./../models/Driver')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status } = req.body
-  let schoolID = req.schoolID || req.body.schoolID
+  let { username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
   DriverModel.createDriver(db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status, schoolID)
     .then(({ insertedId }) => {
@@ -29,14 +29,14 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   if (req.schoolID !== undefined) {
     let result = {}
-    return DriverModel.getDriversBySchool(db, req.schoolID, limit, 1, extra)
+    return DriverModel.getDriversBySchool(db, req.schoolID, query, limit, 1, extra)
       .then((data) => {
         result.data = data
-        return DriverModel.countDriversBySchool(db, req.schoolID)
+        return DriverModel.countDriversBySchool(db, req.schoolID, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -46,10 +46,10 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  DriverModel.getDrivers(db, limit, 1, extra)
+  DriverModel.getDrivers(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return DriverModel.countDrivers(db)
+      return DriverModel.countDrivers(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -61,17 +61,17 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
-  let limit = Number(req.query.limit)
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return DriverModel.getDriversBySchool(db, req.schoolID, limit, page, extra)
+      return DriverModel.getDriversBySchool(db, req.schoolID, query, limit, page, extra)
         .then((data) => {
           result.data = data
-          return DriverModel.countDriversBySchool(db, req.schoolID)
+          return DriverModel.countDriversBySchool(db, req.schoolID, query)
         })
         .then((cnt) => {
           result.count = cnt
@@ -81,10 +81,10 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    DriverModel.getDrivers(db, limit, page, extra)
+    DriverModel.getDrivers(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return DriverModel.countDrivers(db)
+        return DriverModel.countDrivers(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -124,6 +124,7 @@ router.put('/:driverID([0-9a-fA-F]{24})', (req, res, next) => {
   if (name !== undefined) obj1.name = name
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
+  if (schoolID !== undefined) obj1.schoolID = schoolID
   let { db } = req.app.locals
   DriverModel.updateDriver(db, driverID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {

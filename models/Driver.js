@@ -22,7 +22,7 @@ const USER_TYPE_DRIVER = 4
  * @returns {Object}
  */
 function createDriver (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_DRIVER)
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_DRIVER, schoolID)
     .then(({ insertedId }) => (
       db.collection(process.env.DRIVER_COLLECTION)
         .insertOne({
@@ -45,43 +45,93 @@ function createDriver (db, username, password, image, name, phone, email, addres
 /**
  * Count drivers.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countDrivers (db) {
-  return db.collection(process.env.DRIVER_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countDrivers (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.DRIVER_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count drivers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countDriversBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.DRIVER_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get drivers.
  * @param {Object} db
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getDrivers (db, limit, page, extra = 'user') {
-  return db.collection(process.env.DRIVER_COLLECTION)
-    .find({ isDeleted: false })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getDrivers (db, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.DRIVER_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get drivers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getDriversBySchool (db, schoolID, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.DRIVER_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
  * Get driver by id.
  * @param {Object} db
  * @param {string} driverID
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getDriverByID (db, driverID, extra = 'user') {
+function getDriverByID (db, driverID, extra = 'user,school') {
   return db.collection(process.env.DRIVER_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(driverID) })
     .then((v) => {
@@ -95,10 +145,10 @@ function getDriverByID (db, driverID, extra = 'user') {
  * Get driver by user.
  * @param {Object} db
  * @param {string} userID
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getDriverByUser (db, userID, extra = 'user') {
+function getDriverByUser (db, userID, extra = 'user,school') {
   return db.collection(process.env.DRIVER_COLLECTION)
     .findOne({ isDeleted: false, userID })
     .then((v) => {
@@ -112,10 +162,10 @@ function getDriverByUser (db, userID, extra = 'user') {
  * Get drivers by ids.
  * @param {Object} db
  * @param {Array} driverIDs
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getDriversByIDs (db, driverIDs, extra = 'user') {
+function getDriversByIDs (db, driverIDs, extra = 'user,school') {
   return db.collection(process.env.DRIVER_COLLECTION)
     .find({ isDeleted: false, _id: { $in: driverIDs } })
     .toArray()
@@ -138,12 +188,17 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let userIDs = []
-    docs.forEach(({ userID }) => {
+    let schoolIDs = []
+    docs.forEach(({ userID, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
       }
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
+      }
     })
     let users
+    let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -152,24 +207,41 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID } = c
+          let { userID, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
+          }
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { userID } = doc
+  let { userID, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
       .then((v) => {
         doc.user = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
       })
     arr.push(p)
   }
@@ -239,51 +311,38 @@ function deleteDriverByUser (db, userID) {
 }
 
 /**
- * Count drivers by school.
+ * Delete drivers by school.
  * @param {Object} db
  * @param {string} schoolID
  * @returns {Object}
  */
-function countDriversBySchool (db, schoolID) {
+function deleteDriversBySchool (db, schoolID) {
   return db.collection(process.env.DRIVER_COLLECTION)
     .find({ isDeleted: false, schoolID })
-    .count()
-}
-
-/**
- * Get drivers by school.
- * @param {Object} db
- * @param {string} schoolID
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='user']
- * @returns {Object}
- */
-function getDriversBySchool (db, schoolID, limit, page, extra = 'user') {
-  return db.collection(process.env.DRIVER_COLLECTION)
-    .find({ isDeleted: false, schoolID })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .project({ _id: 1 })
     .toArray()
     .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
+      v.forEach(({ _id }) => {
+        deleteDriver(db, String(_id))
+      })
     })
 }
 
 module.exports = {
   createDriver,
   countDrivers,
+  countDriversBySchool,
   getDrivers,
+  getDriversBySchool,
   getDriverByID,
   getDriverByUser,
   getDriversByIDs,
   updateDriver,
   deleteDriver,
   deleteDriverByUser,
-  countDriversBySchool,
-  getDriversBySchool,
+  deleteDriversBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
