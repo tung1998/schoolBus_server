@@ -10,7 +10,6 @@ const ClassModel = require('./../models/Class')
 const ConfigModel = require('./../models/Config')
 const DriverModel = require('./../models/Driver')
 const FeedbackModel = require('./../models/Feedback')
-const GPSModel = require('./../models/GPS')
 const NannyModel = require('./../models/Nanny')
 const ParentModel = require('./../models/Parent')
 const ParentRequestModel = require('./../models/ParentRequest')
@@ -625,7 +624,18 @@ function initOAuth2 (db, app) {
     method: ['put'],
   })
 
-  soas2.defend({
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+          }
+          return next()
+        })
+    }
+    return next()
+  }).defend({
     routes: ['/GPS(/**)?'],
     method: ['get', 'post', 'put', 'delete'],
   })

@@ -5,9 +5,10 @@ const GPSModel = require('./../models/GPS')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { carID, location } = req.body
+  let { carID, location, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  GPSModel.createGPS(db, carID, location)
+  GPSModel.createGPS(db, carID, location, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,12 +29,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return GPSModel.getGPSBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return GPSModel.countGPSBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  GPSModel.getGPS(db, 1, extra)
+  GPSModel.getGPS(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return GPSModel.countGPS(db)
+      return GPSModel.countGPS(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -45,15 +61,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return GPSModel.getGPSBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return GPSModel.countGPSBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    GPSModel.getGPS(db, page, extra)
+    GPSModel.getGPS(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return GPSModel.countGPS(db)
+        return GPSModel.countGPS(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -78,10 +109,11 @@ router.get('/:GPSID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:GPSID([0-9a-fA-F]{24})', (req, res, next) => {
   let { GPSID } = req.params
-  let { carID, location } = req.body
+  let { carID, location, schoolID } = req.body
   let obj = {}
   if (carID !== undefined) obj.carID = carID
   if (location !== undefined) obj.location = location
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   GPSModel.updateGPS(db, GPSID, obj)
     .then(({ matchedCount }) => {
