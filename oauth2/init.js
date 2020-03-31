@@ -1100,6 +1100,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/StudentList/:studentListID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
+  }).defend({
+    routes: ['/StudentList/:studentListID([0-9a-fA-F]{24})/studentIDs/add', '/StudentList/:studentListID([0-9a-fA-F]{24})/studentIDs/remove'],
+    method: ['put'],
   })
 
   soas2.layerAnd((req, next, cancel) => {

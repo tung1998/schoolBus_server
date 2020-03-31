@@ -7,11 +7,12 @@ const StudentModel = require('./../models/Student')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { name, studentIDs = [] } = req.body
+  let { name, studentIDs = [], schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
   StudentModel.getStudentsCarStopIDs(db, studentIDs)
     .then((carStopIDs) => {
-      return StudentListModel.createStudentList(db, name, studentIDs, carStopIDs)
+      return StudentListModel.createStudentList(db, name, studentIDs, carStopIDs, schoolID)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
           return LogModel.createLog(
@@ -33,12 +34,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return StudentListModel.getStudentListsBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return StudentListModel.countStudentListsBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  StudentListModel.getStudentLists(db, 1, extra)
+  StudentListModel.getStudentLists(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return StudentListModel.countStudentLists(db)
+      return StudentListModel.countStudentLists(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -50,15 +66,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return StudentListModel.getStudentListsBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return StudentListModel.countStudentListsBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    StudentListModel.getStudentLists(db, page, extra)
+    StudentListModel.getStudentLists(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return StudentListModel.countStudentLists(db)
+        return StudentListModel.countStudentLists(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -84,11 +115,12 @@ router.get('/:studentListID([0-9a-fA-F]{24})', (req, res, next) => {
 router.put('/:studentListID([0-9a-fA-F]{24})', (req, res, next) => {
   let { db } = req.app.locals
   let { studentListID } = req.params
-  let { name, studentIDs, carStopIDs } = req.body
+  let { name, studentIDs, carStopIDs, schoolID } = req.body
   let obj = {}
   if (name !== undefined) obj.name = name
   if (studentIDs !== undefined) obj.studentIDs = studentIDs
   if (carStopIDs !== undefined) obj.carStopIDs = carStopIDs
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let p = Promise.resolve()
   if (studentIDs !== undefined && carStopIDs === undefined) {
     p = StudentModel.getStudentsCarStopIDs(db, studentIDs)
