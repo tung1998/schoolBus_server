@@ -117,6 +117,7 @@ function deleteSchool (db, schoolID) {
       deleteStudentTripsBySchool(db, schoolID)
       deleteTeachersBySchool(db, schoolID)
       deleteTripsBySchool(db, schoolID)
+      deleteTripLocationsBySchool(db, schoolID)
     }
   })
   return p
@@ -151,3 +152,4 @@ const { deleteStudentListsBySchool } = require('./StudentList')
 const { deleteStudentTripsBySchool } = require('./StudentTrip')
 const { deleteTeachersBySchool } = require('./Teacher')
 const { deleteTripsBySchool } = require('./Trip')
+const { deleteTripLocationsBySchool } = require('./TripLocation')

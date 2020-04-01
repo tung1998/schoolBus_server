@@ -5,9 +5,10 @@ const TripLocationModel = require('./../models/TripLocation')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { tripID, location, time } = req.body
+  let { tripID, location, time, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  TripLocationModel.createTripLocation(db, tripID, location, time)
+  TripLocationModel.createTripLocation(db, tripID, location, time, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,12 +29,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return TripLocationModel.getTripLocationsBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return TripLocationModel.countTripLocationsBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  TripLocationModel.getTripLocations(db, 1, extra)
+  TripLocationModel.getTripLocations(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return TripLocationModel.countTripLocations(db)
+      return TripLocationModel.countTripLocations(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -45,15 +61,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return TripLocationModel.getTripLocationsBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return TripLocationModel.countTripLocationsBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    TripLocationModel.getTripLocations(db, page, extra)
+    TripLocationModel.getTripLocations(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return TripLocationModel.countTripLocations(db)
+        return TripLocationModel.countTripLocations(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -78,11 +109,12 @@ router.get('/:tripLocationID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:tripLocationID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripLocationID } = req.params
-  let { tripID, location, time } = req.body
+  let { tripID, location, time, schoolID } = req.body
   let obj = {}
   if (tripID !== undefined) obj.tripID = tripID
   if (location !== undefined) obj.location = location
   if (time !== undefined) obj.time = time
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   TripLocationModel.updateTripLocation(db, tripLocationID, obj)
     .then(({ matchedCount }) => {
