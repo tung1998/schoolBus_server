@@ -5,9 +5,10 @@ const SMSModel = require('./../models/SMS')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { userID, phoneNumber, content, status, price } = req.body
+  let { userID, phoneNumber, content, status, price, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  SMSModel.createSMS(db, userID, phoneNumber, content, status, price)
+  SMSModel.createSMS(db, userID, phoneNumber, content, status, price, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,12 +29,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return SMSModel.getSMSBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return SMSModel.countSMSBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  SMSModel.getSMS(db, 1, extra)
+  SMSModel.getSMS(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return SMSModel.countSMS(db)
+      return SMSModel.countSMS(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -45,15 +61,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return SMSModel.getSMSBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return SMSModel.countSMSBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    SMSModel.getSMS(db, page, extra)
+    SMSModel.getSMS(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return SMSModel.countSMS(db)
+        return SMSModel.countSMS(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -78,13 +109,14 @@ router.get('/:SMSID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:SMSID([0-9a-fA-F]{24})', (req, res, next) => {
   let { SMSID } = req.params
-  let { userID, phoneNumber, content, status, price } = req.body
+  let { userID, phoneNumber, content, status, price, schoolID } = req.body
   let obj = {}
   if (userID !== undefined) obj.userID = userID
   if (phoneNumber !== undefined) obj.phoneNumber = phoneNumber
   if (content !== undefined) obj.content = content
   if (status !== undefined) obj.status = status
   if (price !== undefined) obj.price = price
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   SMSModel.updateSMS(db, SMSID, obj)
     .then(({ matchedCount }) => {

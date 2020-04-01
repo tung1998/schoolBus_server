@@ -11,9 +11,10 @@ const SMS_STATUS_SENT = 1
  * @param {string} content
  * @param {number} [status=SMS_STATUS_CREATED]
  * @param {number} price
+ * @param {string} schoolID
  * @returns {Object}
  */
-function createSMS (db, userID, phoneNumber, content, status = SMS_STATUS_CREATED, price) {
+function createSMS (db, userID, phoneNumber, content, status = SMS_STATUS_CREATED, price, schoolID) {
   return db.collection(process.env.SMS_COLLECTION)
     .insertOne({
       userID,
@@ -21,6 +22,7 @@ function createSMS (db, userID, phoneNumber, content, status = SMS_STATUS_CREATE
       content,
       status,
       price,
+      schoolID,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -30,42 +32,93 @@ function createSMS (db, userID, phoneNumber, content, status = SMS_STATUS_CREATE
 /**
  * Count SMS.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countSMS (db) {
-  return db.collection(process.env.SMS_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countSMS (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.SMS_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count SMS by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countSMSBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.SMS_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get SMS.
  * @param {Object} db
+ * @param {Object} query
+ * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getSMS (db, page, extra = 'user') {
-  return db.collection(process.env.SMS_COLLECTION)
-    .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getSMS (db, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.SMS_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get SMS by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getSMSBySchool (db, schoolID, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.SMS_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
  * Get unsent SMS.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getUnsentSMS (db, page, extra = 'user') {
+function getUnsentSMS (db, page, extra = 'user,school') {
   return db.collection(process.env.SMS_COLLECTION)
     .find({ isDeleted: false, status: SMS_STATUS_CREATED })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -82,10 +135,10 @@ function getUnsentSMS (db, page, extra = 'user') {
  * Get sent SMS.
  * @param {Object} db
  * @param {number} page
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getSentSMS (db, page, extra = 'user') {
+function getSentSMS (db, page, extra = 'user,school') {
   return db.collection(process.env.SMS_COLLECTION)
     .find({ isDeleted: false, status: SMS_STATUS_SENT })
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
@@ -102,10 +155,10 @@ function getSentSMS (db, page, extra = 'user') {
  * Get SMS by id.
  * @param {Object} db
  * @param {string} SMSID
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getSMSByID (db, SMSID, extra = 'user') {
+function getSMSByID (db, SMSID, extra = 'user,school') {
   return db.collection(process.env.SMS_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(SMSID) })
     .then((v) => {
@@ -119,10 +172,10 @@ function getSMSByID (db, SMSID, extra = 'user') {
  * Get SMS by ids.
  * @param {Object} db
  * @param {Array} SMSIDs
- * @param {string} [extra='user']
+ * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getSMSByIDs (db, SMSIDs, extra = 'user') {
+function getSMSByIDs (db, SMSIDs, extra = 'user,school') {
   return db.collection(process.env.SMS_COLLECTION)
     .find({ isDeleted: false, _id: { $in: SMSIDs } })
     .toArray()
@@ -160,12 +213,17 @@ function addExtra (db, docs, extra) {
   let e = extra.split(',')
   if (Array.isArray(docs)) {
     let userIDs = []
-    docs.forEach(({ userID }) => {
+    let schoolIDs = []
+    docs.forEach(({ userID, schoolID }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
       }
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
+      }
     })
     let users
+    let schools
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -174,24 +232,41 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { userID } = c
+          let { userID, schoolID } = c
           if (users !== undefined && userID != null) {
             c.user = users[userID]
+          }
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
           }
         })
         return docs
       })
   }
   let doc = docs
-  let { userID } = doc
+  let { userID, schoolID } = doc
   let arr = []
   if (e.includes('user') && userID != null) {
     let p = getUserByID(db, userID)
       .then((v) => {
         doc.user = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
       })
     arr.push(p)
   }
@@ -243,10 +318,30 @@ function deleteSMS (db, SMSID) {
     )
 }
 
+/**
+ * Delete SMS by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function deleteSMSBySchool (db, schoolID) {
+  return db.collection(process.env.SMS_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteSMS(db, String(_id))
+      })
+    })
+}
+
 module.exports = {
   createSMS,
   countSMS,
+  countSMSBySchool,
   getSMS,
+  getSMSBySchool,
   getUnsentSMS,
   getSentSMS,
   getSMSByID,
@@ -255,6 +350,9 @@ module.exports = {
   updateSMS,
   updateSMSStatus,
   deleteSMS,
+  deleteSMSBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { getUsersByIDs, getUserByID } = require('./User')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
