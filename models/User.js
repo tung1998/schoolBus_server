@@ -49,50 +49,169 @@ function createUser (db, username, password = '12345678', image, name, phone, em
 /**
  * Count users.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countUsers (db) {
-  return db.collection(process.env.USER_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countUsers (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.USER_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count users by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countUsersBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.USER_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get users.
  * @param {Object} db
+ * @param {Object} query
+ * @param {number} limit
  * @param {number} page
+ * @param {string} [extra='school']
  * @returns {Object}
  */
-function getUsers (db, page) {
-  return db.collection(process.env.USER_COLLECTION)
-    .find({ isDeleted: false })
-    .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
-    .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
+function getUsers (db, query, limit, page, extra = 'school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.USER_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get users by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='school']
+ * @returns {Object}
+ */
+function getUsersBySchool (db, schoolID, query, limit, page, extra = 'school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.USER_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
  * Get user by id.
  * @param {Object} db
  * @param {string} userID
+ * @param {string} [extra='school']
  * @returns {Object}
  */
-function getUserByID (db, userID) {
+function getUserByID (db, userID, extra = 'school') {
   return db.collection(process.env.USER_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(userID) })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
 }
 
 /**
  * Get users by ids.
  * @param {Object} db
  * @param {Array} userIDs
+ * @param {string} [extra='school']
  * @returns {Object}
  */
-function getUsersByIDs (db, userIDs) {
+function getUsersByIDs (db, userIDs, extra = 'school') {
   return db.collection(process.env.USER_COLLECTION)
     .find({ isDeleted: false, _id: { $in: userIDs } })
     .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
     .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
+}
+
+/**
+ * Add extra.
+ * @param {Object} db
+ * @param {(Array|Object)} docs
+ * @param {string} extra
+ * @returns {Object}
+ */
+function addExtra (db, docs, extra) {
+  let e = extra.split(',')
+  if (Array.isArray(docs)) {
+    let schoolIDs = []
+    docs.forEach(({ schoolID }) => {
+      if (e.includes('school') && schoolID != null) {
+        schoolIDs.push(ObjectID(schoolID))
+      }
+    })
+    let schools
+    let arr = []
+    if (schoolIDs.length > 0) {
+      let p = getSchoolsByIDs(db, schoolIDs)
+        .then((v) => {
+          schools = v
+        })
+      arr.push(p)
+    }
+    return Promise.all(arr)
+      .then(() => {
+        docs.forEach((c) => {
+          let { schoolID } = c
+          if (schools !== undefined && schoolID != null) {
+            c.school = schools[schoolID]
+          }
+        })
+        return docs
+      })
+  }
+  let doc = docs
+  let { schoolID } = doc
+  let arr = []
+  if (e.includes('school') && schoolID != null) {
+    let p = getSchoolByID(db, schoolID)
+      .then((v) => {
+        doc.school = v
+      })
+    arr.push(p)
+  }
+  return Promise.all(arr)
+    .then(() => doc)
 }
 
 /**
@@ -154,6 +273,24 @@ function deleteUser (db, userID, deleteOption = true) {
     }
   })
   return p
+}
+
+/**
+ * Delete users by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @returns {Object}
+ */
+function deleteUsersBySchool (db, schoolID) {
+  return db.collection(process.env.USER_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id }) => {
+        deleteUser(db, String(_id))
+      })
+    })
 }
 
 /**
@@ -280,34 +417,47 @@ function updateUserPassword (db, userID, password) {
  * Get user by phone.
  * @param {Object} db
  * @param {string} phone
+ * @param {string} [extra='school']
  * @returns {Object}
  */
-function getUserByPhone (db, phone) {
+function getUserByPhone (db, phone, extra = 'school') {
   return db.collection(process.env.USER_COLLECTION).findOne({ isDeleted: false, phone })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
 }
 
 /**
  * Get user by email.
  * @param {Object} db
  * @param {string} email
+ * @param {string} [extra='school']
  * @returns {Object}
  */
-function getUserByEmail (db, email) {
+function getUserByEmail (db, email, extra = 'school') {
   return db.collection(process.env.USER_COLLECTION).findOne({ isDeleted: false, email })
+    .then((v) => {
+      if (v === null) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
 }
 
 /**
  * Get user by accessToken.
  * @param {Object} db
  * @param {string} accessToken
+ * @param {string} [extra='school']
  * @returns {Object}
  */
-function getUserByAccessToken (db, accessToken) {
+function getUserByAccessToken (db, accessToken, extra = 'school') {
   return db.collection(process.env.OAUTH2_TOKEN_COLLECTION)
     .findOne({ access_token: accessToken }, { fields: { _id: 0, userID: 1 } })
     .then((v) => {
       if (v === null) return null
-      return getUserByID(db, v.userID)
+      return getUserByID(db, v.userID, extra)
     })
 }
 
@@ -326,11 +476,14 @@ function checkUserIsSuperAdmin (db, userID) {
 module.exports = {
   createUser,
   countUsers,
+  countUsersBySchool,
   getUsers,
+  getUsersBySchool,
   getUserByID,
   getUsersByIDs,
   updateUser,
   deleteUser,
+  deleteUsersBySchool,
   loginByUsername,
   blockUser,
   unblockUser,
@@ -341,6 +494,8 @@ module.exports = {
   checkUserIsSuperAdmin,
 }
 
+const parseQuery = require('./parseQuery')
+const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { deleteAdministratorByUser } = require('./Administrator')
 const { deleteStudentByUser } = require('./Student')
 const { deleteNannyByUser } = require('./Nanny')

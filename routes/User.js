@@ -5,9 +5,9 @@ const UserModel = require('./../models/User')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, userType } = req.body
+  let { username, password, image, name, phone, email, userType, schoolID } = req.body
   let { db } = req.app.locals
-  UserModel.createUser(db, username, password, image, name, phone, email, userType)
+  UserModel.createUser(db, username, password, image, name, phone, email, userType, schoolID)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -28,11 +28,27 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
+  if (req.schoolID !== undefined) {
+    let result = {}
+    return UserModel.getUsersBySchool(db, req.schoolID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return UserModel.countUsersBySchool(db, req.schoolID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
-  UserModel.getUsers(db, 1)
+  UserModel.getUsers(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return UserModel.countUsers(db)
+      return UserModel.countUsers(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -44,14 +60,30 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
+    if (req.schoolID !== undefined) {
+      let result = {}
+      return UserModel.getUsersBySchool(db, req.schoolID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return UserModel.countUsersBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
     let result = {}
-    UserModel.getUsers(db, page)
+    UserModel.getUsers(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return UserModel.countUsers(db)
+        return UserModel.countUsers(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -65,7 +97,8 @@ router.get('/:page(\\d+)', (req, res, next) => {
 router.get('/:userID([0-9a-fA-F]{24})', (req, res, next) => {
   let { userID } = req.params
   let { db } = req.app.locals
-  UserModel.getUserByID(db, userID)
+  let { extra } = req.query
+  UserModel.getUserByID(db, userID, extra)
     .then((v) => {
       if (v === null) res.status(404).send({ message: 'Not Found' })
       else res.send(v)
@@ -75,12 +108,13 @@ router.get('/:userID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:userID([0-9a-fA-F]{24})', (req, res, next) => {
   let { userID } = req.params
-  let { image, name, phone, email } = req.body
+  let { image, name, phone, email, schoolID } = req.body
   let obj = {}
   if (image !== undefined) obj.image = image
   if (name !== undefined) obj.name = name
   if (phone !== undefined) obj.phone = phone
   if (email !== undefined) obj.email = email
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let { db } = req.app.locals
   UserModel.updateUser(db, userID, obj)
     .then(({ matchedCount }) => {
@@ -252,9 +286,9 @@ router.put('/:userID([0-9a-fA-F]{24})/password', (req, res, next) => {
 })
 
 router.get('/byPhone', (req, res, next) => {
-  let { phone } = req.query
+  let { phone, extra } = req.query
   let { db } = req.app.locals
-  UserModel.getUserByPhone(db, phone)
+  UserModel.getUserByPhone(db, phone, extra)
     .then((v) => {
       if (v === null) res.status(404).send({ message: 'Not Found' })
       else res.send(v)
@@ -263,9 +297,9 @@ router.get('/byPhone', (req, res, next) => {
 })
 
 router.get('/byEmail', (req, res, next) => {
-  let { email } = req.query
+  let { email, extra } = req.query
   let { db } = req.app.locals
-  UserModel.getUserByEmail(db, email)
+  UserModel.getUserByEmail(db, email, extra)
     .then((v) => {
       if (v === null) res.status(404).send({ message: 'Not Found' })
       else res.send(v)
@@ -274,9 +308,9 @@ router.get('/byEmail', (req, res, next) => {
 })
 
 router.get('/byAccessToken', (req, res, next) => {
-  let { access_token: accessToken } = req.query
+  let { access_token: accessToken, extra } = req.query
   let { db } = req.app.locals
-  UserModel.getUserByAccessToken(db, accessToken)
+  UserModel.getUserByAccessToken(db, accessToken, extra)
     .then((v) => {
       if (v === null) res.status(404).send({ message: 'Not Found' })
       else res.send(v)
@@ -287,7 +321,8 @@ router.get('/byAccessToken', (req, res, next) => {
 router.get('/current', (req, res, next) => {
   let { db } = req.app.locals
   let { userID } = req.token
-  UserModel.getUserByID(db, userID)
+  let { extra } = req.query
+  UserModel.getUserByID(db, userID, extra)
     .then(v => res.send(v))
     .catch(next)
 })
