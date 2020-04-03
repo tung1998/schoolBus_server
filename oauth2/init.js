@@ -768,6 +768,9 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
+    routes: ['/Parent/byClass'],
+    method: ['get'],
+  }).defend({
     routes: ['/Parent'],
     method: ['post'],
   }).defend({

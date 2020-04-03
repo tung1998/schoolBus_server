@@ -491,6 +491,20 @@ function getStudentIDsBySchool (db, schoolID) {
     .then(v => v.map(({ _id }) => String(_id)))
 }
 
+/**
+ * Get studentIDs by class.
+ * @param {Object} db
+ * @param {string} classID
+ * @returns {Object}
+ */
+function getStudentIDsByClass (db, classID) {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, classID })
+    .project({ _id: 1 })
+    .toArray()
+    .then(v => v.map(({ _id }) => String(_id)))
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -510,6 +524,7 @@ module.exports = {
   getStudentsCarStopIDs,
   updateStudentsDeleteCarStop,
   getStudentIDsBySchool,
+  getStudentIDsByClass,
 }
 
 const parseQuery = require('./parseQuery')

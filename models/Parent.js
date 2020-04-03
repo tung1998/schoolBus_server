@@ -172,6 +172,35 @@ function getParentsByIDs (db, parentIDs, extra = 'user,student') {
 }
 
 /**
+ * Get parents by class.
+ * @param {Object} db
+ * @param {string} classID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student']
+ * @returns {Object}
+ */
+function getParentsByClass (db, classID, query, limit, page, extra = 'user,student') {
+  return Promise.all([
+    getStudentIDsByClass(db, classID),
+    parseQuery(db, query),
+  ])
+    .then(([studentIDs]) => (
+      db.collection(process.env.PARENT_COLLECTION)
+        .find({ $and: [{ isDeleted: false, studentIDs: { $in: studentIDs } }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -313,6 +342,7 @@ module.exports = {
   getParentByID,
   getParentByUser,
   getParentsByIDs,
+  getParentsByClass,
   updateParent,
   deleteParent,
   deleteParentByUser,
@@ -320,4 +350,4 @@ module.exports = {
 
 const parseQuery = require('./parseQuery')
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
-const { getStudentsByIDs, getStudentIDsBySchool } = require('./Student')
+const { getStudentsByIDs, getStudentIDsBySchool, getStudentIDsByClass } = require('./Student')

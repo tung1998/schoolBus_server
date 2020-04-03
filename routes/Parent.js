@@ -94,6 +94,16 @@ router.get('/:page(\\d+)', (req, res, next) => {
   }
 })
 
+router.get('/byClass', (req, res, next) => {
+  let { classID, limit, page, extra, ...query } = req.query
+  limit = Number(limit)
+  page = Number(page)
+  let { db } = req.app.locals
+  ParentModel.getParentsByClass(db, classID, query, limit, page, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 router.get('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { parentID } = req.params
   let { db } = req.app.locals
