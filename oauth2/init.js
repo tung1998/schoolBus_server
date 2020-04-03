@@ -1294,6 +1294,13 @@ function initOAuth2 (db, app) {
           return next()
         })
     }
+    if (req.token.type === USER_TYPE_PARENT) {
+      return ParentModel.getParentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.studentIDs = v.studentIDs
+          return next()
+        })
+    }
     return cancel()
   }).defend({
     routes: ['/Trip/next'],

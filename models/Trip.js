@@ -289,6 +289,26 @@ function getNextTripByStudent (db, studentID, extra = 'car,driver,nanny,route,st
 }
 
 /**
+ * Get next trip by students.
+ * @param {Object} db
+ * @param {Array} studentIDs
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getNextTripByStudents (db, studentIDs, extra = 'car,driver,nanny,route,student,school') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, 'students.studentID': { $in: studentIDs }, startTime: { $gt: Date.now() } })
+    .sort({ startTime: 1 })
+    .limit(1)
+    .toArray()
+    .then(([v]) => {
+      if (v === undefined) return undefined
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Get trips by driver.
  * @param {Object} db
  * @param {string} driverID
@@ -609,6 +629,7 @@ module.exports = {
   getNextTripByDriver,
   getNextTripByNanny,
   getNextTripByStudent,
+  getNextTripByStudents,
   getTripsByDriver,
   updateTrip,
   updateTripStatus,

@@ -168,6 +168,14 @@ router.get('/next', (req, res, next) => {
       })
       .catch(next)
   }
+  if (req.studentIDs !== undefined) {
+    return TripModel.getNextTripByStudents(req.app.locals.db, req.studentIDs, req.query.extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
   return res.status(404).send({ message: 'Not Found' })
 })
 
