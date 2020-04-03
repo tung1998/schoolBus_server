@@ -20,7 +20,7 @@ const USER_TYPE_NANNY = 2
  * @returns {Object}
  */
 function createNanny (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_NANNY)
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_NANNY, schoolID)
     .then(({ insertedId }) => (
       db.collection(process.env.NANNY_COLLECTION)
         .insertOne({
@@ -41,33 +41,83 @@ function createNanny (db, username, password, image, name, phone, email, address
 /**
  * Count nannies.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countNannies (db) {
-  return db.collection(process.env.NANNY_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countNannies (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.NANNY_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count nannies by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countNanniesBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.NANNY_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get nannies.
  * @param {Object} db
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
  * @param {string} [extra='user,school']
  * @returns {Object}
  */
-function getNannies (db, limit, page, extra = 'user,school') {
-  return db.collection(process.env.NANNY_COLLECTION)
-    .find({ isDeleted: false })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getNannies (db, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.NANNY_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get nannies by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getNanniesBySchool (db, schoolID, query, limit, page, extra = 'user,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.NANNY_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
@@ -257,52 +307,38 @@ function deleteNannyByUser (db, userID) {
 }
 
 /**
- * Count nannies by school.
+ * Delete nannies by school.
  * @param {Object} db
  * @param {string} schoolID
  * @returns {Object}
  */
-function countNanniesBySchool (db, schoolID) {
+function deleteNanniesBySchool (db, schoolID) {
   return db.collection(process.env.NANNY_COLLECTION)
     .find({ isDeleted: false, schoolID })
-    .count()
-}
-
-/**
- * Get nannies by school.
- * @param {Object} db
- * @param {string} schoolID
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='user,school']
- * @returns {Object}
- */
-function getNanniesBySchool (db, schoolID, limit, page, extra = 'user,school') {
-  return db.collection(process.env.NANNY_COLLECTION)
-    .find({ isDeleted: false, schoolID })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+    .project({ _id: 1 })
     .toArray()
     .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
+      v.forEach(({ _id }) => {
+        deleteNanny(db, String(_id))
+      })
     })
 }
 
 module.exports = {
   createNanny,
   countNannies,
+  countNanniesBySchool,
   getNannies,
+  getNanniesBySchool,
   getNannyByID,
   getNannyByUser,
   getNanniesByIDs,
   updateNanny,
   deleteNanny,
   deleteNannyByUser,
-  countNanniesBySchool,
-  getNanniesBySchool,
+  deleteNanniesBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')

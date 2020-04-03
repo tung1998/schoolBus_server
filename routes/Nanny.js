@@ -5,8 +5,8 @@ const NannyModel = require('./../models/Nanny')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status } = req.body
-  let schoolID = req.schoolID || req.body.schoolID
+  let { username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
   NannyModel.createNanny(db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID)
     .then(({ insertedId }) => {
@@ -29,14 +29,14 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   if (req.schoolID !== undefined) {
     let result = {}
-    return NannyModel.getNanniesBySchool(db, req.schoolID, limit, 1, extra)
+    return NannyModel.getNanniesBySchool(db, req.schoolID, query, limit, 1, extra)
       .then((data) => {
         result.data = data
-        return NannyModel.countNanniesBySchool(db, req.schoolID)
+        return NannyModel.countNanniesBySchool(db, req.schoolID, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -46,10 +46,10 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  NannyModel.getNannies(db, limit, 1, extra)
+  NannyModel.getNannies(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return NannyModel.countNannies(db)
+      return NannyModel.countNannies(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -61,17 +61,17 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return NannyModel.getNanniesBySchool(db, req.schoolID, limit, page, extra)
+      return NannyModel.getNanniesBySchool(db, req.schoolID, query, limit, page, extra)
         .then((data) => {
           result.data = data
-          return NannyModel.countNanniesBySchool(db, req.schoolID)
+          return NannyModel.countNanniesBySchool(db, req.schoolID, query)
         })
         .then((cnt) => {
           result.count = cnt
@@ -81,10 +81,10 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    NannyModel.getNannies(db, limit, page, extra)
+    NannyModel.getNannies(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return NannyModel.countNannies(db)
+        return NannyModel.countNannies(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -122,6 +122,7 @@ router.put('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
   if (name !== undefined) obj1.name = name
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
+  if (schoolID !== undefined) obj1.schoolID = schoolID
   let { db } = req.app.locals
   NannyModel.updateNanny(db, nannyID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {
