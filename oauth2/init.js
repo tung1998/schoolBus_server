@@ -763,13 +763,19 @@ function initOAuth2 (db, app) {
     method: ['get'],
   })
   soas2.layerAnd((req, next, cancel) => {
-    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR || req.token.type === USER_TYPE_TEACHER) {
       return next()
     }
     return cancel()
   }).defend({
     routes: ['/Parent/byClass'],
     method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return next()
+    }
+    return cancel()
   }).defend({
     routes: ['/Parent'],
     method: ['post'],
@@ -1022,6 +1028,13 @@ function initOAuth2 (db, app) {
                 return cancel()
               })
           }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return ClassModel.getClassByID(req.app.locals.db, req.query.classID, 'teacher')
+        .then((c) => {
+          if (c !== null && c.teacher !== null && c.teacher.userID === req.token.userID) return next()
           return cancel()
         })
     }
