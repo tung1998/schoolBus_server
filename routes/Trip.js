@@ -344,7 +344,7 @@ router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/status
           `Update trip student status : _id = ${tripID} studentID = ${studentID}`,
           Date.now(),
           1,
-          req.body,
+          { ...req.body, studentID },
           'trip',
           tripID,
         )
@@ -370,7 +370,7 @@ router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/image'
           `Update trip student image : _id = ${tripID} studentID = ${studentID}`,
           Date.now(),
           1,
-          req.body,
+          { ...req.body, studentID },
           'trip',
           tripID,
         )
