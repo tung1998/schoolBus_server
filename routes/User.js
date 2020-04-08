@@ -343,4 +343,30 @@ router.get('/isSuperAdmin', (req, res, next) => {
     .catch(next)
 })
 
+router.put('/passwords', (req, res, next) => {
+  let { db } = req.app.locals
+  let arr = req.body.map(({ _id, password }) => (
+    UserModel.updateUserPassword(db, _id, password)
+      .then(({ matchedCount }) => {
+        if (matchedCount === 1) {
+          LogModel.createLog(
+            db,
+            req.token ? req.token.userID : null,
+            req.headers['user-agent'],
+            req.ip,
+            `Update user password : _id = ${_id}`,
+            Date.now(),
+            1,
+            { password },
+            'user',
+            _id,
+          )
+        }
+      })
+  ))
+  Promise.all(arr)
+    .then(() => res.send())
+    .catch(next)
+})
+
 module.exports = router
