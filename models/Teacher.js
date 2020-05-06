@@ -15,7 +15,7 @@ const USER_TYPE_TEACHER = 5
  * @returns {Object}
  */
 function createTeacher (db, username, password, image, name, phone, email, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_TEACHER)
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_TEACHER, schoolID)
     .then(({ insertedId }) => (
       db.collection(process.env.TEACHER_COLLECTION)
         .insertOne({
@@ -31,33 +31,83 @@ function createTeacher (db, username, password, image, name, phone, email, schoo
 /**
  * Count teachers.
  * @param {Object} db
+ * @param {Object} query
  * @returns {Object}
  */
-function countTeachers (db) {
-  return db.collection(process.env.TEACHER_COLLECTION)
-    .find({ isDeleted: false })
-    .count()
+function countTeachers (db, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TEACHER_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count teachers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countTeachersBySchool (db, schoolID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TEACHER_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .count()
+    ))
 }
 
 /**
  * Get teachers.
  * @param {Object} db
+ * @param {Object} query
  * @param {number} limit
  * @param {number} page
  * @param {string} [extra='school,user']
  * @returns {Object}
  */
-function getTeachers (db, limit, page, extra = 'school,user') {
-  return db.collection(process.env.TEACHER_COLLECTION)
-    .find({ isDeleted: false })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
+function getTeachers (db, query, limit, page, extra = 'school,user') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TEACHER_COLLECTION)
+        .find({ $and: [{ isDeleted: false }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get teachers by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='school,user']
+ * @returns {Object}
+ */
+function getTeachersBySchool (db, schoolID, query, limit, page, extra = 'school,user') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TEACHER_COLLECTION)
+        .find({ $and: [{ isDeleted: false, schoolID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
 }
 
 /**
@@ -111,28 +161,6 @@ function getTeachersByIDs (db, teacherIDs, extra = 'school,user') {
       return addExtra(db, v, extra)
     })
     .then(v => v.reduce((a, c) => ({ ...a, [c._id]: c }), {}))
-}
-
-/**
- * Get teachers by school.
- * @param {Object} db
- * @param {Array} schoolID
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='school,user']
- * @returns {Object}
- */
-function getTeachersBySchool (db, schoolID, limit, page, extra = 'school,user') {
-  return db.collection(process.env.TEACHER_COLLECTION)
-    .find({ isDeleted: false, schoolID })
-    .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-    .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-    .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      if (!extra) return v
-      return addExtra(db, v, extra)
-    })
 }
 
 /**
@@ -286,32 +314,21 @@ function deleteTeachersBySchool (db, schoolID) {
     })
 }
 
-/**
- * Count teachers by school.
- * @param {Object} db
- * @param {string} schoolID
- * @returns {Object}
- */
-function countTeachersBySchool (db, schoolID) {
-  return db.collection(process.env.TEACHER_COLLECTION)
-    .find({ isDeleted: false, schoolID })
-    .count()
-}
-
 module.exports = {
   createTeacher,
   countTeachers,
+  countTeachersBySchool,
   getTeachers,
+  getTeachersBySchool,
   getTeacherByID,
   getTeacherByUser,
   getTeachersByIDs,
-  getTeachersBySchool,
   updateTeacher,
   deleteTeacher,
   deleteTeacherByUser,
   deleteTeachersBySchool,
-  countTeachersBySchool,
 }
 
+const parseQuery = require('./parseQuery')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { createUser, getUsersByIDs, getUserByID, updateUser, deleteUser } = require('./User')

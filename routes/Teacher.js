@@ -5,8 +5,8 @@ const TeacherModel = require('./../models/Teacher')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email } = req.body
-  let schoolID = req.schoolID || req.body.schoolID
+  let { username, password, image, name, phone, email, schoolID } = req.body
+  if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
   TeacherModel.createTeacher(db, username, password, image, name, phone, email, schoolID)
     .then(({ insertedId }) => {
@@ -29,14 +29,14 @@ router.post('/', (req, res, next) => {
 
 router.get('/', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   if (req.schoolID !== undefined) {
     let result = {}
-    return TeacherModel.getTeachersBySchool(db, req.schoolID, limit, 1, extra)
+    return TeacherModel.getTeachersBySchool(db, req.schoolID, query, limit, 1, extra)
       .then((data) => {
         result.data = data
-        return TeacherModel.countTeachersBySchool(db, req.schoolID)
+        return TeacherModel.countTeachersBySchool(db, req.schoolID, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -46,10 +46,10 @@ router.get('/', (req, res, next) => {
       .catch(next)
   }
   let result = {}
-  TeacherModel.getTeachers(db, limit, 1, extra)
+  TeacherModel.getTeachers(db, query, limit, 1, extra)
     .then((data) => {
       result.data = data
-      return TeacherModel.countTeachers(db)
+      return TeacherModel.countTeachers(db, query)
     })
     .then((cnt) => {
       result.count = cnt
@@ -61,17 +61,17 @@ router.get('/', (req, res, next) => {
 
 router.get('/:page(\\d+)', (req, res, next) => {
   let { db } = req.app.locals
-  let limit = Number(req.query.limit)
-  let { extra } = req.query
+  let { limit, extra, ...query } = req.query
+  limit = Number(limit)
   let page = Number(req.params.page)
   if (!page || page <= 0) res.status(404).send({ message: 'Not Found' })
   else {
     if (req.schoolID !== undefined) {
       let result = {}
-      return TeacherModel.getTeachersBySchool(db, req.schoolID, limit, page, extra)
+      return TeacherModel.getTeachersBySchool(db, req.schoolID, query, limit, page, extra)
         .then((data) => {
           result.data = data
-          return TeacherModel.countTeachersBySchool(db, req.schoolID)
+          return TeacherModel.countTeachersBySchool(db, req.schoolID, query)
         })
         .then((cnt) => {
           result.count = cnt
@@ -81,10 +81,10 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .catch(next)
     }
     let result = {}
-    TeacherModel.getTeachers(db, limit, page, extra)
+    TeacherModel.getTeachers(db, query, limit, page, extra)
       .then((data) => {
         result.data = data
-        return TeacherModel.countTeachers(db)
+        return TeacherModel.countTeachers(db, query)
       })
       .then((cnt) => {
         result.count = cnt
@@ -109,13 +109,15 @@ router.get('/:teacherID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:teacherID([0-9a-fA-F]{24})', (req, res, next) => {
   let { teacherID } = req.params
-  let { image, name, phone, email } = req.body
+  let { image, name, phone, email, schoolID } = req.body
   let obj = {}
+  if (schoolID !== undefined) obj.schoolID = schoolID
   let obj1 = {}
   if (image !== undefined) obj1.image = image
   if (name !== undefined) obj1.name = name
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
+  if (schoolID !== undefined) obj1.schoolID = schoolID
   let { db } = req.app.locals
   TeacherModel.updateTeacher(db, teacherID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {
@@ -187,11 +189,11 @@ router.get('/:teacherID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 
 router.get('/bySchool', (req, res, next) => {
   let { db } = req.app.locals
-  let { extra } = req.query
-  let schoolID = req.schoolID || req.query.schoolID
-  let limit = Number(req.query.limit)
-  let page = Number(req.query.page) || 1
-  TeacherModel.getTeachersBySchool(db, schoolID, limit, page, extra)
+  let { schoolID, limit, page, extra, ...query } = req.query
+  if (req.schoolID !== undefined) schoolID = req.schoolID
+  limit = Number(limit)
+  page = Number(page) || 1
+  TeacherModel.getTeachersBySchool(db, schoolID, query, limit, page, extra)
     .then(v => res.send(v))
     .catch(next)
 })
