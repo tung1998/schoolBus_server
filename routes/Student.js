@@ -202,4 +202,14 @@ router.get('/byClass', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/byClassStatusInDate', (req, res, next) => {
+  let { db } = req.app.locals
+  let { classID, year, month, extra } = req.query
+  year = Number(year)
+  month = Number(month)
+  StudentModel.getStudentsByClassStatusInDate(db, classID, year, month, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router

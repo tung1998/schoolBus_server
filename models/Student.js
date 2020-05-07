@@ -505,6 +505,49 @@ function getStudentIDsByClass (db, classID) {
     .then(v => v.map(({ _id }) => String(_id)))
 }
 
+/**
+ * Get students status in date.
+ * @param {Object} db
+ * @param {string} classID
+ * @param {number} year
+ * @param {number} month
+ * @param {string} [extra='user,class,carStop,school']
+ * @returns {Object}
+ */
+function getStudentsByClassStatusInDate (db, classID, year, month, extra = 'user,class,carStop,school') {
+  let start = new Date(year, month - 1).getTime()
+  let end = new Date(year, month).getTime()
+  let n = new Date(year, month, 0).getDate()
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, classID })
+    .toArray()
+    .then((students) => {
+      let studentIDs = []
+      let temp = {}
+      students.forEach((c, i) => {
+        c.statusInDate = new Array(n).fill(null)
+        studentIDs[i] = String(c._id)
+        temp[c._id] = c
+      })
+      return db.collection(process.env.TRIP_COLLECTION)
+        .find({ isDeleted: false, startTime: { $gte: start, $lt: end }, status: { $in: [0, 1, 2] }, 'students.studentID': { $in: studentIDs } })
+        .sort({ startTime: 1 })
+        .project({ _id: 0, startTime: 1, 'students.studentID': 1, 'students.status': 1 })
+        .toArray()
+        .then((trips) => {
+          trips.forEach((c) => {
+            let i = new Date(c.startTime).getDate() - 1
+            c.students.forEach(({ studentID, status }) => {
+              if (temp[studentID] !== undefined && temp[studentID].statusInDate[i] === null) {
+                temp[studentID].statusInDate[i] = status
+              }
+            })
+          })
+          return addExtra(db, students, extra)
+        })
+    })
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -525,6 +568,7 @@ module.exports = {
   updateStudentsDeleteCarStop,
   getStudentIDsBySchool,
   getStudentIDsByClass,
+  getStudentsByClassStatusInDate,
 }
 
 const parseQuery = require('./parseQuery')

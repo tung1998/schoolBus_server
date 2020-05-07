@@ -1040,7 +1040,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Student/byClass'],
+    routes: ['/Student/byClass', '/Student/byClassStatusInDate'],
     method: ['get'],
   })
   soas2.layerAnd((req, next, cancel) => {
