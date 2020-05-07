@@ -293,6 +293,7 @@ module.exports = {
   getLogsByObject,
   updateLog,
   deleteLog,
+  addExtra,
 }
 
 const { getUsersByIDs, getUserByID } = require('./User')

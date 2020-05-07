@@ -548,6 +548,30 @@ function getStudentsByClassStatusInDate (db, classID, year, month, extra = 'user
     })
 }
 
+/**
+ * Get trips by student in date logs.
+ * @param {Object} db
+ * @param {string} studentID
+ * @param {Date} date
+ * @param {string} [extra='user,student']
+ * @returns {Object}
+ */
+function getTripsByStudentInDateLogs (db, studentID, date, extra = 'user,student') {
+  let start = date.getTime()
+  let end = date.setHours(24)
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, startTime: { $gte: start, $lt: end }, status: { $in: [0, 1, 2] }, 'students.studentID': studentID })
+    .project({ _id: 1 })
+    .toArray()
+    .then((trips) => {
+      let tripIDs = trips.map(({ _id }) => String(_id))
+      return db.collection(process.env.LOG_COLLECTION)
+        .find({ isDeleted: false, objectType: 'trip', objectId: { $in: tripIDs } })
+        .toArray()
+        .then(logs => addLogExtra(db, logs, extra))
+    })
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -569,6 +593,7 @@ module.exports = {
   getStudentIDsBySchool,
   getStudentIDsByClass,
   getStudentsByClassStatusInDate,
+  getTripsByStudentInDateLogs,
 }
 
 const parseQuery = require('./parseQuery')
@@ -578,3 +603,4 @@ const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { updateStudentListsRemoveStudentCarStop, updateStudentListsReplaceCarStop } = require('./StudentList')
 const { updateTripsRemoveStudent } = require('./Trip')
+const { addExtra: addLogExtra } = require('./Log')

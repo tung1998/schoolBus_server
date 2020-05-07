@@ -212,4 +212,15 @@ router.get('/byClassStatusInDate', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/:studentID([0-9a-fA-F]{24})/tripInDateLog', (req, res, next) => {
+  let { db } = req.app.locals
+  let { studentID } = req.params
+  let { date, extra } = req.query
+  let [d, m, y] = date.split(/\//)
+  date = new Date(Number(y), Number(m) - 1, Number(d))
+  StudentModel.getTripsByStudentInDateLogs(db, studentID, date, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router
