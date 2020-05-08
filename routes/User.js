@@ -5,9 +5,9 @@ const UserModel = require('./../models/User')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, userType, schoolID } = req.body
+  let { username, password, image, name, phone, email, userType, schoolID, dateOfBirth } = req.body
   let { db } = req.app.locals
-  UserModel.createUser(db, username, password, image, name, phone, email, userType, schoolID)
+  UserModel.createUser(db, username, password, image, name, phone, email, userType, schoolID, dateOfBirth)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -108,13 +108,14 @@ router.get('/:userID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:userID([0-9a-fA-F]{24})', (req, res, next) => {
   let { userID } = req.params
-  let { image, name, phone, email, schoolID } = req.body
+  let { image, name, phone, email, schoolID, dateOfBirth } = req.body
   let obj = {}
   if (image !== undefined) obj.image = image
   if (name !== undefined) obj.name = name
   if (phone !== undefined) obj.phone = phone
   if (email !== undefined) obj.email = email
   if (schoolID !== undefined) obj.schoolID = schoolID
+  if (dateOfBirth !== undefined) obj.dateOfBirth = dateOfBirth
   let { db } = req.app.locals
   UserModel.updateUser(db, userID, obj)
     .then(({ matchedCount }) => {

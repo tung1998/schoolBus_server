@@ -19,9 +19,10 @@ const USER_TYPE_TEACHER = 5
  * @param {string} email
  * @param {number} userType
  * @param {string} schoolID
+ * @param {string} dateOfBirth
  * @returns {Object}
  */
-function createUser (db, username, password = '12345678', image, name, phone, email, userType, schoolID) {
+function createUser (db, username, password = '12345678', image, name, phone, email, userType, schoolID, dateOfBirth) {
   let salt = randomSalt()
   return db.collection(process.env.USER_COLLECTION)
     .insertOne({
@@ -40,6 +41,7 @@ function createUser (db, username, password = '12345678', image, name, phone, em
       isVerify: false,
       resetCode: null,
       schoolID,
+      dateOfBirth,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
