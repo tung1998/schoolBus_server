@@ -17,10 +17,11 @@ const USER_TYPE_NANNY = 2
  * @param {string} IDIssueBy
  * @param {number} status
  * @param {string} schoolID
+ * @param {string} dateOfBirth
  * @returns {Object}
  */
-function createNanny (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_NANNY, schoolID)
+function createNanny (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID, dateOfBirth) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_NANNY, schoolID, dateOfBirth)
     .then(({ insertedId }) => (
       db.collection(process.env.NANNY_COLLECTION)
         .insertOne({

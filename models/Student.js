@@ -17,10 +17,11 @@ const USER_TYPE_STUDENT = 1
  * @param {number} status
  * @param {string} carStopID
  * @param {string} schoolID
+ * @param {string} dateOfBirth
  * @returns {Object}
  */
-function createStudent (db, username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_STUDENT, schoolID)
+function createStudent (db, username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID, schoolID, dateOfBirth) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_STUDENT, schoolID, dateOfBirth)
     .then(({ insertedId }) => (
       db.collection(process.env.STUDENT_COLLECTION)
         .insertOne({

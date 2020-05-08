@@ -17,10 +17,11 @@ const ADMINISTRATOR_TYPE_SCHOOL = 1
  * @param {number} adminType
  * @param {string} permission
  * @param {string} schoolID
+ * @param {string} dateOfBirth
  * @returns {Object}
  */
-function createAdministrator (db, username, password, image, name, phone, email, adminType, permission, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_ADMINISTRATOR, schoolID)
+function createAdministrator (db, username, password, image, name, phone, email, adminType, permission, schoolID, dateOfBirth) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_ADMINISTRATOR, schoolID, dateOfBirth)
     .then(({ insertedId }) => (
       db.collection(process.env.ADMINISTRATOR_COLLECTION)
         .insertOne({

@@ -12,10 +12,11 @@ const USER_TYPE_TEACHER = 5
  * @param {string} phone
  * @param {string} email
  * @param {string} schoolID
+ * @param {string} dateOfBirth
  * @returns {Object}
  */
-function createTeacher (db, username, password, image, name, phone, email, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_TEACHER, schoolID)
+function createTeacher (db, username, password, image, name, phone, email, schoolID, dateOfBirth) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_TEACHER, schoolID, dateOfBirth)
     .then(({ insertedId }) => (
       db.collection(process.env.TEACHER_COLLECTION)
         .insertOne({

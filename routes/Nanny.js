@@ -5,10 +5,10 @@ const NannyModel = require('./../models/Nanny')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID } = req.body
+  let { username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID, dateOfBirth } = req.body
   if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  NannyModel.createNanny(db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID)
+  NannyModel.createNanny(db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID, dateOfBirth)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -109,7 +109,7 @@ router.get('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
   let { nannyID } = req.params
-  let { address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID, image, name, phone, email } = req.body
+  let { address, IDNumber, IDIssueDate, IDIssueBy, status, schoolID, image, name, phone, email, dateOfBirth } = req.body
   let obj = {}
   if (address !== undefined) obj.address = address
   if (IDNumber !== undefined) obj.IDNumber = IDNumber
@@ -123,6 +123,7 @@ router.put('/:nannyID([0-9a-fA-F]{24})', (req, res, next) => {
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
   if (schoolID !== undefined) obj1.schoolID = schoolID
+  if (dateOfBirth !== undefined) obj1.dateOfBirth = dateOfBirth
   let { db } = req.app.locals
   NannyModel.updateNanny(db, nannyID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {

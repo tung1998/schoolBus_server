@@ -5,9 +5,9 @@ const ParentModel = require('./../models/Parent')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, studentIDs, address } = req.body
+  let { username, password, image, name, phone, email, studentIDs, address, dateOfBirth } = req.body
   let { db } = req.app.locals
-  ParentModel.createParent(db, username, password, image, name, phone, email, studentIDs, address)
+  ParentModel.createParent(db, username, password, image, name, phone, email, studentIDs, address, dateOfBirth)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -118,7 +118,7 @@ router.get('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { parentID } = req.params
-  let { studentIDs, address, image, name, phone, email } = req.body
+  let { studentIDs, address, image, name, phone, email, dateOfBirth } = req.body
   let obj = {}
   if (studentIDs !== undefined) obj.studentIDs = studentIDs
   if (address !== undefined) obj.address = address
@@ -127,6 +127,7 @@ router.put('/:parentID([0-9a-fA-F]{24})', (req, res, next) => {
   if (name !== undefined) obj1.name = name
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
+  if (dateOfBirth !== undefined) obj1.dateOfBirth = dateOfBirth
   let { db } = req.app.locals
   ParentModel.updateParent(db, parentID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {

@@ -13,10 +13,11 @@ const USER_TYPE_PARENT = 3
  * @param {string} email
  * @param {Array} studentIDs
  * @param {string} address
+ * @param {string} dateOfBirth
  * @returns {Object}
  */
-function createParent (db, username, password, image, name, phone, email, studentIDs, address) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_PARENT)
+function createParent (db, username, password, image, name, phone, email, studentIDs, address, dateOfBirth) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_PARENT, null, dateOfBirth)
     .then(({ insertedId }) => (
       db.collection(process.env.PARENT_COLLECTION)
         .insertOne({

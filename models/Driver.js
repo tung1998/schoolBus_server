@@ -19,10 +19,11 @@ const USER_TYPE_DRIVER = 4
  * @param {number} DLIssueDate
  * @param {number} status
  * @param {string} schoolID
+ * @param {string} dateOfBirth
  * @returns {Object}
  */
-function createDriver (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status, schoolID) {
-  return createUser(db, username, password, image, name, phone, email, USER_TYPE_DRIVER, schoolID)
+function createDriver (db, username, password, image, name, phone, email, address, IDNumber, IDIssueDate, IDIssueBy, DLNumber, DLIssueDate, status, schoolID, dateOfBirth) {
+  return createUser(db, username, password, image, name, phone, email, USER_TYPE_DRIVER, schoolID, dateOfBirth)
     .then(({ insertedId }) => (
       db.collection(process.env.DRIVER_COLLECTION)
         .insertOne({

@@ -5,10 +5,10 @@ const StudentModel = require('./../models/Student')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID, schoolID } = req.body
+  let { username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID, schoolID, dateOfBirth } = req.body
   if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  StudentModel.createStudent(db, username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID, schoolID)
+  StudentModel.createStudent(db, username, password, image, name, phone, email, address, IDStudent, classID, status, carStopID, schoolID, dateOfBirth)
     .then(({ insertedId }) => {
       res.send({ _id: insertedId })
       return LogModel.createLog(
@@ -109,7 +109,7 @@ router.get('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
   let { studentID } = req.params
-  let { address, IDStudent, classID, status, carStopID, schoolID, image, name, phone, email } = req.body
+  let { address, IDStudent, classID, status, carStopID, schoolID, image, name, phone, email, dateOfBirth } = req.body
   let obj = {}
   if (address !== undefined) obj.address = address
   if (IDStudent !== undefined) obj.IDStudent = IDStudent
@@ -123,6 +123,7 @@ router.put('/:studentID([0-9a-fA-F]{24})', (req, res, next) => {
   if (phone !== undefined) obj1.phone = phone
   if (email !== undefined) obj1.email = email
   if (schoolID !== undefined) obj1.schoolID = schoolID
+  if (dateOfBirth !== undefined) obj1.dateOfBirth = dateOfBirth
   let { db } = req.app.locals
   StudentModel.updateStudent(db, studentID, obj, obj1)
     .then(({ lastErrorObject: { updatedExisting } }) => {
