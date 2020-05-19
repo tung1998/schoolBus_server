@@ -421,10 +421,37 @@ function initOAuth2 (db, app) {
           return cancel()
         })
     }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return ClassModel.getClassByID(req.app.locals.db, req.params.classID, 'teacher')
+        .then((c) => {
+          if (c !== null && c.teacher != null && c.teacher.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
     return cancel()
   }).defend({
     routes: ['/Class/:classID([0-9a-fA-F]{24})'],
-    method: ['get', 'put', 'delete'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return ClassModel.getClassByID(req.app.locals.db, req.params.classID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Class/:classID([0-9a-fA-F]{24})'],
+    method: ['put', 'delete'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
