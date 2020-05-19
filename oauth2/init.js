@@ -1085,10 +1085,37 @@ function initOAuth2 (db, app) {
           return cancel()
         })
     }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return StudentModel.getStudentByID(req.app.locals.db, req.params.studentID, 'class')
+        .then((c) => {
+          if (c !== null && c.class != null && c.class.teacher != null && c.class.teacher.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
     return cancel()
   }).defend({
     routes: ['/Student/:studentID([0-9a-fA-F]{24})'],
-    method: ['get', 'put', 'delete'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return StudentModel.getStudentByID(req.app.locals.db, req.params.studentID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Student/:studentID([0-9a-fA-F]{24})'],
+    method: ['put', 'delete'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
