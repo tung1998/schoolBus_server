@@ -193,6 +193,38 @@ router.get('/history', (req, res, next) => {
   return res.status(404).send({ message: 'Not Found' })
 })
 
+router.get('/allNext', (req, res, next) => {
+  if (req.driverID !== undefined) {
+    return TripModel.getAllNextTripsByDriver(req.app.locals.db, req.driverID, req.query.extra)
+      .then((v) => {
+        res.send(v)
+      })
+      .catch(next)
+  }
+  if (req.nannyID !== undefined) {
+    return TripModel.getAllNextTripsByNanny(req.app.locals.db, req.nannyID, req.query.extra)
+      .then((v) => {
+        res.send(v)
+      })
+      .catch(next)
+  }
+  if (req.studentID !== undefined) {
+    return TripModel.getAllNextTripsByStudent(req.app.locals.db, req.studentID, req.query.extra)
+      .then((v) => {
+        res.send(v)
+      })
+      .catch(next)
+  }
+  if (req.studentIDs !== undefined) {
+    return TripModel.getAllNextTripsByStudents(req.app.locals.db, req.studentIDs, req.query.extra)
+      .then((v) => {
+        res.send(v)
+      })
+      .catch(next)
+  }
+  return res.status(404).send({ message: 'Not Found' })
+})
+
 router.get('/byStudent', (req, res, next) => {
   let { db } = req.app.locals
   let { studentID, limit, page, extra, ...query } = req.query

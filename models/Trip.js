@@ -335,6 +335,82 @@ function getTripsByDriver (db, driverID, query, limit, page, extra = 'car,driver
 }
 
 /**
+ * Get all next trips by driver.
+ * @param {Object} db
+ * @param {string} driverID
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getAllNextTripsByDriver (db, driverID, extra = 'car,driver,nanny,route,student,school') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, driverID, startTime: { $gt: Date.now() } })
+    .sort({ startTime: 1 })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get all next trips by nanny.
+ * @param {Object} db
+ * @param {string} nannyID
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getAllNextTripsByNanny (db, nannyID, extra = 'car,driver,nanny,route,student,school') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, nannyID, startTime: { $gt: Date.now() } })
+    .sort({ startTime: 1 })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get all next trips by student.
+ * @param {Object} db
+ * @param {string} studentID
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getAllNextTripsByStudent (db, studentID, extra = 'car,driver,nanny,route,student,school') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, 'students.studentID': studentID, startTime: { $gt: Date.now() } })
+    .sort({ startTime: 1 })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get all next trips by students.
+ * @param {Object} db
+ * @param {Array} studentIDs
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getAllNextTripsByStudents (db, studentIDs, extra = 'car,driver,nanny,route,student,school') {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, 'students.studentID': { $in: studentIDs }, startTime: { $gt: Date.now() } })
+    .sort({ startTime: 1 })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -631,6 +707,10 @@ module.exports = {
   getNextTripByStudent,
   getNextTripByStudents,
   getTripsByDriver,
+  getAllNextTripsByDriver,
+  getAllNextTripsByNanny,
+  getAllNextTripsByStudent,
+  getAllNextTripsByStudents,
   updateTrip,
   updateTripStatus,
   updateTripStudentStatus,
