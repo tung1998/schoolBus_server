@@ -202,6 +202,50 @@ function getParentsByClass (db, classID, query, limit, page, extra = 'user,stude
 }
 
 /**
+ * Get parents by student.
+ * @param {Object} db
+ * @param {string} studentID
+ * @param {string} [extra='user,student']
+ * @returns {Object}
+ */
+function getParentsByStudent (db, studentID, extra = 'user,student') {
+  return db.collection(process.env.PARENT_COLLECTION)
+    .find({ isDeleted: false, studentIDs: { $elemMatch: { $eq: studentID } } })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get parents by students.
+ * @param {Object} db
+ * @param {Array} studentIDs
+ * @param {string} [extra='user,student']
+ * @returns {Object}
+ */
+function getParentsByStudents (db, studentIDs, extra = 'user,student') {
+  return db.collection(process.env.PARENT_COLLECTION)
+    .find({ isDeleted: false, studentIDs: { $elemMatch: { $in: studentIDs } } })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+    .then(v => (
+      v.reduce((a, c) => {
+        c.studentIDs.forEach((studentID) => {
+          a[studentID] = (a[studentID] || []).concat(c)
+        })
+        return a
+      }, {})
+    ))
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -344,6 +388,8 @@ module.exports = {
   getParentByUser,
   getParentsByIDs,
   getParentsByClass,
+  getParentsByStudent,
+  getParentsByStudents,
   updateParent,
   deleteParent,
   deleteParentByUser,
