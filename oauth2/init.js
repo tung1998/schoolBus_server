@@ -1253,7 +1253,52 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Trip/byTime', '/Trip/Log', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
+    routes: ['/Trip/byTime', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
+    method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_DRIVER) {
+      return DriverModel.getDriverByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.driverID = String(v._id)
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_NANNY) {
+      return NannyModel.getNannyByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.nannyID = String(v._id)
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_STUDENT) {
+      return StudentModel.getStudentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.studentID = String(v._id)
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_PARENT) {
+      return ParentModel.getParentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.studentIDs = v.studentIDs
+          return next()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Trip/Log'],
     method: ['get'],
   })
   soas2.layerAnd((req, next, cancel) => {

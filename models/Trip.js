@@ -691,6 +691,126 @@ function updateTripStudentImage (db, tripID, studentID, image) {
     )
 }
 
+/**
+ * Get trip logs by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student']
+ * @param {number} start
+ * @param {number} finish
+ * @param {number} type
+ * @returns {Object}
+ */
+function getTripLogsBySchool (db, schoolID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .toArray()
+    .then((v) => {
+      let tripIDs = v.map(({ _id }) => String(_id))
+      return getLogsByObjects(db, 'trip', tripIDs, sortBy, sortType, limit, page, extra, start, finish, type)
+    })
+}
+
+/**
+ * Get trip logs by driver.
+ * @param {Object} db
+ * @param {string} driverID
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student']
+ * @param {number} start
+ * @param {number} finish
+ * @param {number} type
+ * @returns {Object}
+ */
+function getTripLogsByDriver (db, driverID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, driverID })
+    .toArray()
+    .then((v) => {
+      let tripIDs = v.map(({ _id }) => String(_id))
+      return getLogsByObjects(db, 'trip', tripIDs, sortBy, sortType, limit, page, extra, start, finish, type)
+    })
+}
+
+/**
+ * Get trip logs by nanny.
+ * @param {Object} db
+ * @param {string} nannyID
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student']
+ * @param {number} start
+ * @param {number} finish
+ * @param {number} type
+ * @returns {Object}
+ */
+function getTripLogsByNanny (db, nannyID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, nannyID })
+    .toArray()
+    .then((v) => {
+      let tripIDs = v.map(({ _id }) => String(_id))
+      return getLogsByObjects(db, 'trip', tripIDs, sortBy, sortType, limit, page, extra, start, finish, type)
+    })
+}
+
+/**
+ * Get trip logs by student.
+ * @param {Object} db
+ * @param {string} studentID
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student']
+ * @param {number} start
+ * @param {number} finish
+ * @param {number} type
+ * @returns {Object}
+ */
+function getTripLogsByStudent (db, studentID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, 'students.studentID': studentID })
+    .toArray()
+    .then((v) => {
+      let tripIDs = v.map(({ _id }) => String(_id))
+      return getLogsByObjects(db, 'trip', tripIDs, sortBy, sortType, limit, page, extra, start, finish, type)
+    })
+}
+
+/**
+ * Get trip logs by student.
+ * @param {Object} db
+ * @param {Array} studentIDs
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student']
+ * @param {number} start
+ * @param {number} finish
+ * @param {number} type
+ * @returns {Object}
+ */
+function getTripLogsByStudents (db, studentIDs, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, 'students.studentID': { $in: studentIDs } })
+    .toArray()
+    .then((v) => {
+      let tripIDs = v.map(({ _id }) => String(_id))
+      return getLogsByObjects(db, 'trip', tripIDs, sortBy, sortType, limit, page, extra, start, finish, type)
+    })
+}
+
 module.exports = {
   createTrip,
   countTrips,
@@ -718,6 +838,11 @@ module.exports = {
   deleteTripsBySchool,
   updateTripsRemoveStudent,
   updateTripStudentImage,
+  getTripLogsBySchool,
+  getTripLogsByDriver,
+  getTripLogsByNanny,
+  getTripLogsByStudent,
+  getTripLogsByStudents,
 }
 
 const parseQuery = require('./parseQuery')
@@ -728,3 +853,4 @@ const { getRoutesByIDs, getRouteByID } = require('./Route')
 const { getStudentsByIDs } = require('./Student')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { deleteStudentTrips } = require('./StudentTrip')
+const { getLogsByObjects } = require('./Log')

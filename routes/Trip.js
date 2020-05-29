@@ -343,6 +343,31 @@ router.get('/Log', (req, res, next) => {
   let { sortBy, sortType, limit, page, extra } = req.query
   limit = Number(limit)
   page = Number(page)
+  if (req.schoolID !== undefined) {
+    return TripModel.getTripLogsBySchool(db, req.schoolID, sortBy, sortType, limit, page, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+  if (req.driverID !== undefined) {
+    return TripModel.getTripLogsByDriver(db, req.driverID, sortBy, sortType, limit, page, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+  if (req.nannyID !== undefined) {
+    return TripModel.getTripLogsByNanny(db, req.nannyID, sortBy, sortType, limit, page, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+  if (req.studentID !== undefined) {
+    return TripModel.getTripLogsByStudent(db, req.studentID, sortBy, sortType, limit, page, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+  if (req.studentIDs !== undefined) {
+    return TripModel.getTripLogsByStudents(db, req.studentIDs, sortBy, sortType, limit, page, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
   LogModel.getLogsByObjectType(db, 'trip', sortBy, sortType, limit, page, extra)
     .then(v => res.send(v))
     .catch(next)
