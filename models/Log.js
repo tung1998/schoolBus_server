@@ -183,6 +183,51 @@ function getLogsByObject (db, objectType, objectId, sortBy, sortType, limit, pag
 }
 
 /**
+ * Get logs by objects.
+ * @param {Object} db
+ * @param {string} objectType
+ * @param {Array} objectIds
+ * @param {string} sortBy
+ * @param {string} sortType
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='user,student']
+ * @param {number} start
+ * @param {number} finish
+ * @param {number} type
+ * @returns {Object}
+ */
+function getLogsByObjects (db, objectType, objectIds, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+  if (!limit) limit = Number(process.env.LIMIT_DOCUMENT_PER_PAGE)
+  if (!page) page = 1
+  let query = { isDeleted: false, objectType, objectId: { $in: objectIds } }
+  if (start && finish) query.createdTime = { $gte: start, $lt: finish }
+  if (type) query.type = { $in: type.split(',').map(Number) }
+  let sort = {}
+  if (sortBy) {
+    sortBy = sortBy.split(',')
+    sortType = sortType ? sortType.split(',') : []
+    sortBy.forEach((e, i) => {
+      sort[e] = Number(sortType[i]) || 1
+    })
+  }
+  let p1 = db.collection(process.env.LOG_COLLECTION)
+    .find(query)
+    .sort(sort)
+    .skip(limit * (page - 1))
+    .limit(limit)
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+  let p2 = db.collection(process.env.LOG_COLLECTION).count(query)
+  return Promise.all([p1, p2])
+    .then(([data, count]) => ({ data, count, page }))
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -291,6 +336,7 @@ module.exports = {
   getLogsByIDs,
   getLogsByObjectType,
   getLogsByObject,
+  getLogsByObjects,
   updateLog,
   deleteLog,
   addExtra,
