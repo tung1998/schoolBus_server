@@ -195,4 +195,17 @@ router.get('/:driverID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/statisticInMonth', (req, res, next) => {
+  let { db } = req.app.locals
+  let { year, month, extra } = req.query
+  year = Number(year)
+  month = Number(month) - 1
+  if (req.schoolID !== undefined) {
+    return DriverModel.getStatisticInMonthBySchool(db, req.schoolID, year, month, extra)
+      .then(v => res.send(v))
+      .catch(next)
+  }
+  res.status(404).send({ message: 'Not Found' })
+})
+
 module.exports = router

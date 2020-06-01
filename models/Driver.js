@@ -2,6 +2,8 @@ const { ObjectID } = require('mongodb')
 
 const USER_TYPE_DRIVER = 4
 
+const TRIP_STATUS_END = 2
+
 /**
  * Creats driver.
  * @param {Object} db
@@ -329,6 +331,67 @@ function deleteDriversBySchool (db, schoolID) {
     })
 }
 
+/**
+ * Get statistic in month by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} year
+ * @param {number} month
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getStatisticInMonthBySchool (db, schoolID, year, month, extra = 'user,school') {
+  return db.collection(process.env.DRIVER_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+    .then((drivers) => {
+      if (drivers.length === 0) return []
+
+      return getStatisticInMonth(db, drivers, year, month)
+        .then((v) => {
+          drivers.forEach((c) => {
+            Object.assign(c, v[c._id])
+          })
+          return drivers
+        })
+    })
+}
+
+/**
+ * Get statistic in month.
+ * @param {Object} db
+ * @param {Array} drivers
+ * @param {number} year
+ * @param {number} month
+ * @returns {Object}
+ */
+function getStatisticInMonth (db, drivers, year, month) {
+  let start = new Date(year, month).getTime()
+  let finish = new Date(year, month + 1).getTime()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({
+      isDeleted: false,
+      startTime: { $gte: start, $lt: finish },
+      driverID: { $in: drivers.map(({ _id }) => String(_id)) },
+      status: TRIP_STATUS_END,
+    })
+    .toArray()
+    .then((trips) => {
+      return trips.reduce((a, { driverID }) => {
+        if (a[driverID] === undefined) {
+          a[driverID] = { countTrips: 0 }
+        }
+        a[driverID].countTrips += 1
+        return a
+      }, {})
+    })
+}
+
 module.exports = {
   createDriver,
   countDrivers,
@@ -342,6 +405,7 @@ module.exports = {
   deleteDriver,
   deleteDriverByUser,
   deleteDriversBySchool,
+  getStatisticInMonthBySchool,
 }
 
 const parseQuery = require('./parseQuery')
