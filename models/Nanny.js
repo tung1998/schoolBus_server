@@ -2,6 +2,8 @@ const { ObjectID } = require('mongodb')
 
 const USER_TYPE_NANNY = 2
 
+const TRIP_STATUS_END = 2
+
 /**
  * Creats nanny.
  * @param {Object} db
@@ -325,6 +327,67 @@ function deleteNanniesBySchool (db, schoolID) {
     })
 }
 
+/**
+ * Get statistic in month by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} year
+ * @param {number} month
+ * @param {string} [extra='user,school']
+ * @returns {Object}
+ */
+function getStatisticInMonthBySchool (db, schoolID, year, month, extra = 'user,school') {
+  return db.collection(process.env.NANNY_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+    .then((nannies) => {
+      if (nannies.length === 0) return []
+
+      return getStatisticInMonth(db, nannies, year, month)
+        .then((v) => {
+          nannies.forEach((c) => {
+            Object.assign(c, v[c._id])
+          })
+          return nannies
+        })
+    })
+}
+
+/**
+ * Get statistic in month.
+ * @param {Object} db
+ * @param {Array} nannies
+ * @param {number} year
+ * @param {number} month
+ * @returns {Object}
+ */
+function getStatisticInMonth (db, nannies, year, month) {
+  let start = new Date(year, month).getTime()
+  let finish = new Date(year, month + 1).getTime()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({
+      isDeleted: false,
+      startTime: { $gte: start, $lt: finish },
+      nannyID: { $in: nannies.map(({ _id }) => String(_id)) },
+      status: TRIP_STATUS_END,
+    })
+    .toArray()
+    .then((trips) => {
+      return trips.reduce((a, { nannyID }) => {
+        if (a[nannyID] === undefined) {
+          a[nannyID] = { countTrips: 0 }
+        }
+        a[nannyID].countTrips += 1
+        return a
+      }, {})
+    })
+}
+
 module.exports = {
   createNanny,
   countNannies,
@@ -338,6 +401,7 @@ module.exports = {
   deleteNanny,
   deleteNannyByUser,
   deleteNanniesBySchool,
+  getStatisticInMonthBySchool,
 }
 
 const parseQuery = require('./parseQuery')
