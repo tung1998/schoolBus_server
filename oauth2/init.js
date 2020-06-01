@@ -1117,6 +1117,22 @@ function initOAuth2 (db, app) {
     routes: ['/Student/:studentID([0-9a-fA-F]{24})'],
     method: ['put', 'delete'],
   })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            req.schoolID = v.schoolID
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Student/statisticInMonth'],
+    method: ['get'],
+  })
 
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {

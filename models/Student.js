@@ -2,6 +2,8 @@ const { ObjectID } = require('mongodb')
 
 const USER_TYPE_STUDENT = 1
 
+const TRIP_STATUS_END = 2
+
 /**
  * Creats student.
  * @param {Object} db
@@ -595,6 +597,69 @@ function getTripsByStudentInDateLogs (db, studentID, date, extra = 'user,student
     })
 }
 
+/**
+ * Get statistic in month by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} year
+ * @param {number} month
+ * @param {string} [extra='user,class,carStop,school,parent']
+ * @returns {Object}
+ */
+function getStatisticInMonthBySchool (db, schoolID, year, month, extra = 'user,class,carStop,school,parent') {
+  return db.collection(process.env.STUDENT_COLLECTION)
+    .find({ isDeleted: false, schoolID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+    .then((students) => {
+      if (students.length === 0) return []
+
+      return getStatisticInMonth(db, students, year, month)
+        .then((v) => {
+          students.forEach((c) => {
+            Object.assign(c, v[c._id])
+          })
+          return students
+        })
+    })
+}
+
+/**
+ * Get statistic in month.
+ * @param {Object} db
+ * @param {Array} students
+ * @param {number} year
+ * @param {number} month
+ * @returns {Object}
+ */
+function getStatisticInMonth (db, students, year, month) {
+  let start = new Date(year, month).getTime()
+  let finish = new Date(year, month + 1).getTime()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({
+      isDeleted: false,
+      startTime: { $gte: start, $lt: finish },
+      'students.studentID': { $in: students.map(({ _id }) => String(_id)) },
+      status: TRIP_STATUS_END,
+    })
+    .toArray()
+    .then((trips) => {
+      return trips.reduce((a, c) => {
+        c.students.forEach(({ studentID, status }) => {
+          if (a[studentID] === undefined) {
+            a[studentID] = { countTrips: 0 }
+          }
+          a[studentID].countTrips += 1
+        })
+        return a
+      }, {})
+    })
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -617,6 +682,7 @@ module.exports = {
   getStudentIDsByClass,
   getStudentsByClassStatusInDate,
   getTripsByStudentInDateLogs,
+  getStatisticInMonthBySchool,
 }
 
 const parseQuery = require('./parseQuery')
