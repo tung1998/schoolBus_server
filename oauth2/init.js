@@ -178,6 +178,13 @@ function initOAuth2 (db, app) {
           return cancel()
         })
     }
+    if (req.token.type === USER_TYPE_DRIVER) {
+      return DriverModel.getDriverByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.schoolID = v.schoolID
+          return next()
+        })
+    }
     return cancel()
   }).defend({
     routes: ['/Car', '/Car/:page(\\d+)'],
