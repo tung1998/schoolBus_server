@@ -1308,7 +1308,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Trip/byTime', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
+    routes: ['/Trip/byTime'],
     method: ['get'],
   })
   soas2.layerAnd((req, next, cancel) => {
@@ -1426,10 +1426,61 @@ function initOAuth2 (db, app) {
           return cancel()
         })
     }
+    if (req.token.type === USER_TYPE_STUDENT) {
+      return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'student')
+        .then((v) => {
+          if (v !== null && Array.isArray(v.students) && v.students.some(e => e.student != null && e.student.userID === req.token.userID)) return next()
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_PARENT) {
+      return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'student')
+        .then((v) => {
+          if (
+            v !== null
+            && Array.isArray(v.students)
+            && v.students.some(e => e.student != null && Array.isArray(e.student.parents) && e.student.parents.some(el => el.userID === req.token.userID))
+          ) {
+            return next()
+          }
+          return cancel()
+        })
+    }
     return cancel()
   }).defend({
-    routes: ['/Trip/:tripID([0-9a-fA-F]{24})'],
+    routes: ['/Trip/:tripID([0-9a-fA-F]{24})', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
     method: ['get'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_ADMINISTRATOR) {
+      return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
+          if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
+            return TripModel.getTripByID(req.app.locals.db, req.params.tripID, null)
+              .then((c) => {
+                if (c !== null && c.schoolID === v.schoolID) return next()
+                return cancel()
+              })
+          }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_NANNY) {
+      return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'nanny')
+        .then((v) => {
+          if (v !== null && v.nanny != null && v.nanny.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_DRIVER) {
+      return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'driver')
+        .then((v) => {
+          if (v !== null && v.driver != null && v.driver.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
+    return cancel()
   }).defend({
     routes: [
       '/Trip/:tripID([0-9a-fA-F]{24})',
