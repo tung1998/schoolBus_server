@@ -93,6 +93,54 @@ function countTripsByStudent (db, studentID, query) {
 }
 
 /**
+ * Count trips by driver.
+ * @param {Object} db
+ * @param {string} driverID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countTripsByDriver (db, driverID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TRIP_COLLECTION)
+        .find({ $and: [{ isDeleted: false, driverID }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count trips by nanny.
+ * @param {Object} db
+ * @param {string} nannyID
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countTripsByNanny (db, nannyID, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TRIP_COLLECTION)
+        .find({ $and: [{ isDeleted: false, nannyID }, query] })
+        .count()
+    ))
+}
+
+/**
+ * Count trips by students.
+ * @param {Object} db
+ * @param {Array} studentIDs
+ * @param {Object} query
+ * @returns {Object}
+ */
+function countTripsByStudents (db, studentIDs, query) {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TRIP_COLLECTION)
+        .find({ $and: [{ isDeleted: false, 'students.studentID': { $in: studentIDs } }, query] })
+        .count()
+    ))
+}
+
+/**
  * Get trips.
  * @param {Object} db
  * @param {Object} query
@@ -158,6 +206,84 @@ function getTripsByStudent (db, studentID, query, limit, page, extra = 'car,driv
     .then(() => (
       db.collection(process.env.TRIP_COLLECTION)
         .find({ $and: [{ isDeleted: false, 'students.studentID': studentID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get trips by driver.
+ * @param {Object} db
+ * @param {string} driverID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getTripsByDriver (db, driverID, query, limit, page, extra = 'car,driver,nanny,route,student,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TRIP_COLLECTION)
+        .find({ $and: [{ isDeleted: false, driverID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get trips by nanny.
+ * @param {Object} db
+ * @param {string} nannyID
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getTripsByNanny (db, nannyID, query, limit, page, extra = 'car,driver,nanny,route,student,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TRIP_COLLECTION)
+        .find({ $and: [{ isDeleted: false, nannyID }, query] })
+        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
+        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
+        .toArray()
+        .then((v) => {
+          if (v.length === 0) return []
+          if (!extra) return v
+          return addExtra(db, v, extra)
+        })
+    ))
+}
+
+/**
+ * Get trips by students.
+ * @param {Object} db
+ * @param {Array} studentIDs
+ * @param {Object} query
+ * @param {number} limit
+ * @param {number} page
+ * @param {string} [extra='car,driver,nanny,route,student,school']
+ * @returns {Object}
+ */
+function getTripsByStudents (db, studentIDs, query, limit, page, extra = 'car,driver,nanny,route,student,school') {
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.TRIP_COLLECTION)
+        .find({ $and: [{ isDeleted: false, 'students.studentID': { $in: studentIDs } }, query] })
         .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
         .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
         .toArray()
@@ -306,32 +432,6 @@ function getNextTripByStudents (db, studentIDs, extra = 'car,driver,nanny,route,
       if (!extra) return v
       return addExtra(db, v, extra)
     })
-}
-
-/**
- * Get trips by driver.
- * @param {Object} db
- * @param {string} driverID
- * @param {Object} query
- * @param {number} limit
- * @param {number} page
- * @param {string} [extra='car,driver,nanny,route,student,school']
- * @returns {Object}
- */
-function getTripsByDriver (db, driverID, query, limit, page, extra = 'car,driver,nanny,route,student,school') {
-  return parseQuery(db, query)
-    .then(() => (
-      db.collection(process.env.TRIP_COLLECTION)
-        .find({ $and: [{ isDeleted: false, driverID }, query] })
-        .skip((limit || process.env.LIMIT_DOCUMENT_PER_PAGE) * (page - 1))
-        .limit(limit || Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
-        .toArray()
-        .then((v) => {
-          if (v.length === 0) return []
-          if (!extra) return v
-          return addExtra(db, v, extra)
-        })
-    ))
 }
 
 /**
@@ -816,9 +916,15 @@ module.exports = {
   countTrips,
   countTripsBySchool,
   countTripsByStudent,
+  countTripsByDriver,
+  countTripsByNanny,
+  countTripsByStudents,
   getTrips,
   getTripsBySchool,
   getTripsByStudent,
+  getTripsByDriver,
+  getTripsByNanny,
+  getTripsByStudents,
   getTripByID,
   getTripsByIDs,
   getTripsByTime,
@@ -826,7 +932,6 @@ module.exports = {
   getNextTripByNanny,
   getNextTripByStudent,
   getNextTripByStudents,
-  getTripsByDriver,
   getAllNextTripsByDriver,
   getAllNextTripsByNanny,
   getAllNextTripsByStudent,

@@ -69,6 +69,48 @@ router.get('/', (req, res, next) => {
       })
       .catch(next)
   }
+  if (req.nannyID !== undefined) {
+    let result = {}
+    return TripModel.getTripsByNanny(db, req.nannyID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return TripModel.countTripsByNanny(db, req.nannyID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
+  if (req.driverID !== undefined) {
+    let result = {}
+    return TripModel.getTripsByDriver(db, req.driverID, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return TripModel.countTripsByDriver(db, req.driverID, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
+  if (req.studentIDs !== undefined) {
+    let result = {}
+    return TripModel.getTripsByStudents(db, req.studentIDs, query, limit, 1, extra)
+      .then((data) => {
+        result.data = data
+        return TripModel.countTripsByStudents(db, req.studentIDs, query)
+      })
+      .then((cnt) => {
+        result.count = cnt
+        result.page = 1
+        res.send(result)
+      })
+      .catch(next)
+  }
   let result = {}
   TripModel.getTrips(db, query, limit, 1, extra)
     .then((data) => {
@@ -110,6 +152,48 @@ router.get('/:page(\\d+)', (req, res, next) => {
         .then((data) => {
           result.data = data
           return TripModel.countTripsBySchool(db, req.schoolID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
+    if (req.nannyID !== undefined) {
+      let result = {}
+      return TripModel.getTripsByNanny(db, req.nannyID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return TripModel.countTripsByNanny(db, req.nannyID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
+    if (req.driverID !== undefined) {
+      let result = {}
+      return TripModel.getTripsByDriver(db, req.driverID, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return TripModel.countTripsByDriver(db, req.driverID, query)
+        })
+        .then((cnt) => {
+          result.count = cnt
+          result.page = page
+          res.send(result)
+        })
+        .catch(next)
+    }
+    if (req.studentIDs !== undefined) {
+      let result = {}
+      return TripModel.getTripsByStudents(db, req.studentIDs, query, limit, page, extra)
+        .then((data) => {
+          result.data = data
+          return TripModel.countTripsByStudents(db, req.studentIDs, query)
         })
         .then((cnt) => {
           result.count = cnt

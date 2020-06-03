@@ -1375,6 +1375,27 @@ function initOAuth2 (db, app) {
           return next()
         })
     }
+    if (req.token.type === USER_TYPE_NANNY) {
+      return NannyModel.getNannyByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.nannyID = String(v._id)
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_DRIVER) {
+      return DriverModel.getDriverByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.driverID = String(v._id)
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_PARENT) {
+      return ParentModel.getParentByUser(req.app.locals.db, req.token.userID, null)
+        .then((v) => {
+          req.studentIDs = v.studentIDs
+          return next()
+        })
+    }
     return cancel()
   }).defend({
     routes: ['/Trip', '/Trip/:page(\\d+)'],
