@@ -14,6 +14,7 @@ router.post('/', (req, res, next) => {
     .then((v) => {
       if (v === null) return res.status(400).send({ message: 'Route Not Exist' })
       let { carID, driverID, nannyID, studentList } = v
+      if (schoolID === undefined) schoolID = v.schoolID
       let students = studentList == null
         ? []
         : studentList.studentIDs.map(c => ({ studentID: c, status: 0 }))
