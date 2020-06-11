@@ -17,7 +17,7 @@ router.post('/', (req, res, next) => {
       if (schoolID === undefined) schoolID = v.schoolID
       let students = studentList == null
         ? []
-        : studentList.studentIDs.map(c => ({ studentID: c, status: 0 }))
+        : studentList.studentIDs.map(c => ({ studentID: c, status: 0, image: null, note: null }))
       return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
