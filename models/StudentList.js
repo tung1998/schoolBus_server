@@ -250,7 +250,9 @@ function updateStudentList (db, studentListID, obj) {
     )
   p.then(({ lastErrorObject: { updatedExisting }, value }) => {
     if (updatedExisting) {
-
+      if (String(obj.carStopIDs) !== String(value.carStopIDs)) {
+        updateRoutesCarStopsByStudentList(db, studentListID, obj.carStopIDs)
+      }
     }
   })
   return p
@@ -389,3 +391,4 @@ const parseQuery = require('./parseQuery')
 const { getStudentsByIDs } = require('./Student')
 const { getCarStopsByIDs } = require('./CarStop')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
+const { updateRoutesCarStopsByStudentList } = require('./Route')

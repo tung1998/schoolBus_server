@@ -409,6 +409,36 @@ function deleteRoutesBySchool (db, schoolID) {
     })
 }
 
+/**
+ * Update routes carStops by studentList.
+ * @param {Object} db
+ * @param {string} studentListID
+ * @param {Array} carStopIDs
+ * @returns {Object}
+ */
+function updateRoutesCarStopsByStudentList (db, studentListID, carStopIDs) {
+  return db.collection(process.env.ROUTE_COLLECTION)
+    .find({ isDeleted: false, studentListID })
+    .project({ carStops: 1 })
+    .toArray()
+    .then((v) => {
+      v.forEach(({ _id, carStops }) => {
+        let carStopIDsObj = carStopIDs.reduce((a, c) => ({ ...a, [c]: null }), {})
+        carStops = carStops.filter(({ carStopID }) => {
+          if (carStopID in carStopIDsObj) {
+            delete carStopIDsObj[carStopID]
+            return true
+          }
+          return false
+        })
+        Object.keys(carStopIDsObj).forEach((carStopID) => {
+          carStops.push({ carStopID, delayTime: null })
+        })
+        updateRoute(db, String(_id), { carStops })
+      })
+    })
+}
+
 module.exports = {
   createRoute,
   countRoutes,
@@ -420,6 +450,7 @@ module.exports = {
   updateRoute,
   deleteRoute,
   deleteRoutesBySchool,
+  updateRoutesCarStopsByStudentList,
 }
 
 const parseQuery = require('./parseQuery')
