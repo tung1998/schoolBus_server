@@ -281,11 +281,7 @@ function updateStudentListsRemoveStudentCarStop (db, studentID, carStopID) {
         ) {
           carStopIDs.splice(carStopIDs.indexOf(carStopID), 1)
         }
-        db.collection(process.env.STUDENT_LIST_COLLECTION)
-          .updateOne(
-            { isDeleted: false, _id },
-            { $set: { updatedTime: Date.now(), carStopIDs, studentIDs } },
-          )
+        updateStudentList(db, String(_id), { carStopIDs, studentIDs })
       })
     })
 }
@@ -347,11 +343,7 @@ function updateStudentListsReplaceCarStop (db, studentID, carStopID, newCarStopI
           carStopIDs.push(newCarStopID)
         }
         if (b) {
-          db.collection(process.env.STUDENT_LIST_COLLECTION)
-            .updateOne(
-              { isDeleted: false, _id },
-              { $set: { updatedTime: Date.now(), carStopIDs } },
-            )
+          updateStudentList(db, String(_id), { carStopIDs })
         }
       })
     })
