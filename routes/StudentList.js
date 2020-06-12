@@ -131,8 +131,8 @@ router.put('/:studentListID([0-9a-fA-F]{24})', (req, res, next) => {
   p
     .then(() => {
       return StudentListModel.updateStudentList(db, studentListID, obj)
-        .then(({ matchedCount }) => {
-          if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+        .then(({ lastErrorObject: { updatedExisting } }) => {
+          if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
           else {
             res.send()
             return LogModel.createLog(
@@ -220,8 +220,8 @@ router.put('/:studentListID([0-9a-fA-F]{24})/studentIDs/add', (req, res, next) =
         }
       })
       return StudentListModel.updateStudentList(db, studentListID, obj)
-        .then(({ matchedCount }) => {
-          if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+        .then(({ lastErrorObject: { updatedExisting } }) => {
+          if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
           else {
             res.send()
             return LogModel.createLog(
@@ -259,8 +259,8 @@ router.put('/:studentListID([0-9a-fA-F]{24})/studentIDs/remove', (req, res, next
       })
       obj.carStopIDs = v.carStopIDs.filter(e => e in carStopIDs)
       return StudentListModel.updateStudentList(db, studentListID, obj)
-        .then(({ matchedCount }) => {
-          if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+        .then(({ lastErrorObject: { updatedExisting } }) => {
+          if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
           else {
             res.send()
             return LogModel.createLog(

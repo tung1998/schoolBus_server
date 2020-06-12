@@ -241,11 +241,19 @@ function addExtra (db, docs, extra) {
  * @returns {Object}
  */
 function updateStudentList (db, studentListID, obj) {
-  return db.collection(process.env.STUDENT_LIST_COLLECTION)
-    .updateOne(
+  let p = db.collection(process.env.STUDENT_LIST_COLLECTION)
+    .findAndModify(
       { isDeleted: false, _id: ObjectID(studentListID) },
+      null,
       { $set: { updatedTime: Date.now(), ...obj } },
+      { fields: { _id: 0, carStopIDs: 1 } },
     )
+  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
+    if (updatedExisting) {
+
+    }
+  })
+  return p
 }
 
 /**
