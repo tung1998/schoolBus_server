@@ -2,27 +2,34 @@ const express = require('express')
 const router = express.Router()
 
 const RouteModel = require('./../models/Route')
+const StudentListModel = require('./../models/StudentList')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
   let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID } = req.body
   if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
-  RouteModel.createRoute(db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID)
-    .then(({ insertedId }) => {
-      res.send({ _id: insertedId })
-      return LogModel.createLog(
-        db,
-        req.token ? req.token.userID : null,
-        req.headers['user-agent'],
-        req.ip,
-        `Create route : _id = ${insertedId}`,
-        Date.now(),
-        0,
-        req.body,
-        'route',
-        String(insertedId),
-      )
+  StudentListModel.getStudentListByID(db, studentListID, null)
+    .then((v) => {
+      let carStops = v !== null && Array.isArray(v.carStopIDs)
+        ? v.carStopIDs.map(c => ({ carStopID: c, delayTime: null }))
+        : []
+      return RouteModel.createRoute(db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, carStops)
+        .then(({ insertedId }) => {
+          res.send({ _id: insertedId })
+          return LogModel.createLog(
+            db,
+            req.token ? req.token.userID : null,
+            req.headers['user-agent'],
+            req.ip,
+            `Create route : _id = ${insertedId}`,
+            Date.now(),
+            0,
+            req.body,
+            'route',
+            String(insertedId),
+          )
+        })
     })
     .catch(next)
 })
@@ -109,7 +116,7 @@ router.get('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   let { routeID } = req.params
-  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID } = req.body
+  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, carStops } = req.body
   let obj = {}
   if (startCarStopID !== undefined) obj.startCarStopID = startCarStopID
   if (endCarStopID !== undefined) obj.endCarStopID = endCarStopID
@@ -121,26 +128,38 @@ router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   if (name !== undefined) obj.name = name
   if (startTime !== undefined) obj.startTime = startTime
   if (schoolID !== undefined) obj.schoolID = schoolID
+  if (carStops !== undefined) obj.carStops = carStops
   let { db } = req.app.locals
-  RouteModel.updateRoute(db, routeID, obj)
-    .then(({ matchedCount }) => {
-      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
-      else {
-        res.send()
-        return LogModel.createLog(
-          db,
-          req.token ? req.token.userID : null,
-          req.headers['user-agent'],
-          req.ip,
-          `Update route : _id = ${routeID}`,
-          Date.now(),
-          1,
-          req.body,
-          'route',
-          routeID,
-        )
-      }
-    })
+  let p = Promise.resolve()
+  if (studentListID !== undefined && carStops === undefined) {
+    p = StudentListModel.getStudentListByID(db, studentListID, null)
+      .then((v) => {
+        if (v !== null && Array.isArray(v.carStopIDs)) {
+          obj.carStops = v.carStopIDs.map(c => ({ carStopID: c, delayTime: null }))
+        }
+      })
+  }
+  p.then(() => {
+    return RouteModel.updateRoute(db, routeID, obj)
+      .then(({ matchedCount }) => {
+        if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+        else {
+          res.send()
+          return LogModel.createLog(
+            db,
+            req.token ? req.token.userID : null,
+            req.headers['user-agent'],
+            req.ip,
+            `Update route : _id = ${routeID}`,
+            Date.now(),
+            1,
+            req.body,
+            'route',
+            routeID,
+          )
+        }
+      })
+  })
     .catch(next)
 })
 

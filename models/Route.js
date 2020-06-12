@@ -13,9 +13,10 @@ const { ObjectID } = require('mongodb')
  * @param {string} name
  * @param {string} startTime
  * @param {string} schoolID
+ * @param {Array} carStops
  * @returns {Object}
  */
-function createRoute (db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID) {
+function createRoute (db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, carStops) {
   return db.collection(process.env.ROUTE_COLLECTION)
     .insertOne({
       startCarStopID,
@@ -28,6 +29,7 @@ function createRoute (db, startCarStopID, endCarStopID, toll, carID, driverID, n
       name,
       startTime,
       schoolID,
+      carStops,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,
@@ -71,10 +73,10 @@ function countRoutesBySchool (db, schoolID, query) {
  * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops']
  * @returns {Object}
  */
-function getRoutes (db, query, limit, page, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
+function getRoutes (db, query, limit, page, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops') {
   return parseQuery(db, query)
     .then(() => (
       db.collection(process.env.ROUTE_COLLECTION)
@@ -97,10 +99,10 @@ function getRoutes (db, query, limit, page, extra = 'startCarStop,endCarStop,car
  * @param {Object} query
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops']
  * @returns {Object}
  */
-function getRoutesBySchool (db, schoolID, query, limit, page, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
+function getRoutesBySchool (db, schoolID, query, limit, page, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops') {
   return parseQuery(db, query)
     .then(() => (
       db.collection(process.env.ROUTE_COLLECTION)
@@ -120,10 +122,10 @@ function getRoutesBySchool (db, schoolID, query, limit, page, extra = 'startCarS
  * Get route by id.
  * @param {Object} db
  * @param {string} routeID
- * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops']
  * @returns {Object}
  */
-function getRouteByID (db, routeID, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
+function getRouteByID (db, routeID, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(routeID) })
     .then((v) => {
@@ -137,10 +139,10 @@ function getRouteByID (db, routeID, extra = 'startCarStop,endCarStop,car,driver,
  * Get routes by ids.
  * @param {Object} db
  * @param {Array} routeIDs
- * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school']
+ * @param {string} [extra='startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops']
  * @returns {Object}
  */
-function getRoutesByIDs (db, routeIDs, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school') {
+function getRoutesByIDs (db, routeIDs, extra = 'startCarStop,endCarStop,car,driver,nanny,studentList,school,carStops') {
   return db.collection(process.env.ROUTE_COLLECTION)
     .find({ isDeleted: false, _id: { $in: routeIDs } })
     .toArray()
@@ -169,7 +171,8 @@ function addExtra (db, docs, extra) {
     let nannyIDs = []
     let studentListIDs = []
     let schoolIDs = []
-    docs.forEach(({ startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID }) => {
+    let carStopIDs = []
+    docs.forEach(({ startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID, carStops: cs }) => {
       if (e.includes('startCarStop') && startCarStopID != null) {
         startCarStopIDs.push(ObjectID(startCarStopID))
       }
@@ -191,6 +194,9 @@ function addExtra (db, docs, extra) {
       if (e.includes('school') && schoolID != null) {
         schoolIDs.push(ObjectID(schoolID))
       }
+      if (e.includes('carStops') && Array.isArray(cs)) {
+        carStopIDs.push(...cs.map(e => ObjectID(e.carStopID)))
+      }
     })
     let startCarStops
     let endCarStops
@@ -199,6 +205,7 @@ function addExtra (db, docs, extra) {
     let nannies
     let studentLists
     let schools
+    let carStops
     let arr = []
     if (startCarStopIDs.length > 0) {
       let p = getCarStopsByIDs(db, startCarStopIDs)
@@ -249,10 +256,17 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (carStopIDs.length > 0) {
+      let p = getCarStopsByIDs(db, carStopIDs)
+        .then((v) => {
+          carStops = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
-          let { startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID } = c
+          let { startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID, carStops: cs } = c
           if (startCarStops !== undefined && startCarStopID != null) {
             c.startCarStop = startCarStops[startCarStopID]
           }
@@ -274,12 +288,17 @@ function addExtra (db, docs, extra) {
           if (schools !== undefined && schoolID != null) {
             c.school = schools[schoolID]
           }
+          if (carStops !== undefined && Array.isArray(cs)) {
+            c.carStops.forEach(e => {
+              e.carStop = carStops[e.carStopID]
+            })
+          }
         })
         return docs
       })
   }
   let doc = docs
-  let { startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID } = doc
+  let { startCarStopID, endCarStopID, carID, driverID, nannyID, studentListID, schoolID, carStops } = doc
   let arr = []
   if (e.includes('startCarStop') && startCarStopID != null) {
     let p = getCarStopByID(db, startCarStopID)
@@ -320,6 +339,15 @@ function addExtra (db, docs, extra) {
     let p = getStudentListByID(db, studentListID)
       .then((v) => {
         doc.studentList = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('carStops') && Array.isArray(carStops)) {
+    let p = getCarStopsByIDs(db, carStops.map(({ carStopID }) => ObjectID(carStopID)))
+      .then((v) => {
+        doc.carStops.forEach(c => {
+          c.carStop = v[c.carStopID]
+        })
       })
     arr.push(p)
   }
