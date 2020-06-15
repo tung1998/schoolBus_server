@@ -337,7 +337,7 @@ router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
-  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID } = req.body
+  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, carStops } = req.body
   let obj = {}
   if (carID !== undefined) obj.carID = carID
   if (driverID !== undefined) obj.driverID = driverID
@@ -352,6 +352,7 @@ router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   if (endTime !== undefined) obj.endTime = endTime
   if (students !== undefined) obj.students = students
   if (schoolID !== undefined) obj.schoolID = schoolID
+  if (carStops !== undefined) obj.carStops = carStops
   let { db } = req.app.locals
   TripModel.updateTrip(db, tripID, obj)
     .then(({ matchedCount }) => {
