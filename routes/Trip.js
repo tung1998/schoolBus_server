@@ -20,7 +20,7 @@ router.post('/', (req, res, next) => {
         : studentList.studentIDs.map(c => ({ studentID: c, status: 0, image: null, note: null }))
       let carStops = studentList == null || !Array.isArray(studentList.carStopIDs)
         ? []
-        : studentList.carStopIDs.map(carStopID => ({ carStopID, status: null, note: null }))
+        : studentList.carStopIDs.map(carStopID => ({ carStopID, status: 0, note: null }))
       return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, carStops)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
