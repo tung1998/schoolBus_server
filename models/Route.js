@@ -439,6 +439,20 @@ function updateRoutesCarStopsByStudentList (db, studentListID, carStopIDs) {
     })
 }
 
+/**
+ * Update routes remove carStop.
+ * @param {Object} db
+ * @param {string} carStopID
+ * @returns {Object}
+ */
+function updateRoutesRemoveCarStop (db, carStopID) {
+  return db.collection(process.env.ROUTE_COLLECTION)
+    .updateMany(
+      { isDeleted: false, 'carStops.carStopID': carStopID },
+      { $set: { updatedTime: Date.now() }, $pull: { carStops: { carStopID } } },
+    )
+}
+
 module.exports = {
   createRoute,
   countRoutes,
@@ -451,6 +465,7 @@ module.exports = {
   deleteRoute,
   deleteRoutesBySchool,
   updateRoutesCarStopsByStudentList,
+  updateRoutesRemoveCarStop,
 }
 
 const parseQuery = require('./parseQuery')

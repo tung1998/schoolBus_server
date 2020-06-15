@@ -223,6 +223,7 @@ function deleteCarStop (db, carStopID) {
     if (matchedCount === 1) {
       updateStudentsDeleteCarStop(db, carStopID)
       updateStudentListsRemoveCarStop(db, carStopID)
+      updateRoutesRemoveCarStop(db, carStopID)
     }
   })
   return p
@@ -263,3 +264,4 @@ const parseQuery = require('./parseQuery')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { updateStudentsDeleteCarStop } = require('./Student')
 const { updateStudentListsRemoveCarStop } = require('./StudentList')
+const { updateRoutesRemoveCarStop } = require('./Route')
