@@ -224,6 +224,7 @@ function deleteCarStop (db, carStopID) {
       updateStudentsDeleteCarStop(db, carStopID)
       updateStudentListsRemoveCarStop(db, carStopID)
       updateRoutesRemoveCarStop(db, carStopID)
+      updateTripsRemoveCarStop(db, carStopID)
     }
   })
   return p
@@ -265,3 +266,4 @@ const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { updateStudentsDeleteCarStop } = require('./Student')
 const { updateStudentListsRemoveCarStop } = require('./StudentList')
 const { updateRoutesRemoveCarStop } = require('./Route')
+const { updateTripsRemoveCarStop } = require('./Trip')

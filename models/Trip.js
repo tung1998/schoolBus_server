@@ -805,6 +805,20 @@ function updateTripsRemoveStudent (db, studentID) {
 }
 
 /**
+ * Update trips remove carStop.
+ * @param {Object} db
+ * @param {string} carStopID
+ * @returns {Object}
+ */
+function updateTripsRemoveCarStop (db, carStopID) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateMany(
+      { isDeleted: false, carStops: { $elemMatch: { carStopID } } },
+      { $set: { updatedTime: Date.now() }, $pull: { carStops: { carStopID } } },
+    )
+}
+
+/**
  * Update trip student image.
  * @param {Object} db
  * @param {string} tripID
@@ -971,6 +985,7 @@ module.exports = {
   deleteTrip,
   deleteTripsBySchool,
   updateTripsRemoveStudent,
+  updateTripsRemoveCarStop,
   updateTripStudentImage,
   getTripLogsBySchool,
   getTripLogsByDriver,
