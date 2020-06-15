@@ -13,12 +13,12 @@ router.post('/', (req, res, next) => {
   RouteModel.getRouteByID(db, routeID, 'studentList')
     .then((v) => {
       if (v === null) return res.status(400).send({ message: 'Route Not Exist' })
-      let { carID, driverID, nannyID, studentList, startCarStopID, endCarStopID } = v
+      let { carID, driverID, nannyID, studentList } = v
       if (schoolID === undefined) schoolID = v.schoolID
       let students = studentList == null
         ? []
         : studentList.studentIDs.map(c => ({ studentID: c, status: 0, image: null, note: null }))
-      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, startCarStopID, endCarStopID)
+      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
           return LogModel.createLog(
@@ -334,7 +334,7 @@ router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
-  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, startCarStopID, endCarStopID } = req.body
+  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID } = req.body
   let obj = {}
   if (carID !== undefined) obj.carID = carID
   if (driverID !== undefined) obj.driverID = driverID
@@ -349,8 +349,6 @@ router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   if (endTime !== undefined) obj.endTime = endTime
   if (students !== undefined) obj.students = students
   if (schoolID !== undefined) obj.schoolID = schoolID
-  if (startCarStopID !== undefined) obj.startCarStopID = startCarStopID
-  if (endCarStopID !== undefined) obj.endCarStopID = endCarStopID
   let { db } = req.app.locals
   TripModel.updateTrip(db, tripID, obj)
     .then(({ matchedCount }) => {
