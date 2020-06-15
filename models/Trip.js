@@ -753,6 +753,28 @@ function updateTripStudentStatus (db, tripID, studentID, status) {
 }
 
 /**
+ * Update trip carStop.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {string} carStopID
+ * @param {Object} obj
+ * @returns {Object}
+ */
+function updateTripCarStop (db, tripID, carStopID, obj) {
+  let $set = { updatedTime: Date.now() }
+  Object.entries(obj).forEach(([k, v]) => {
+    if (v !== undefined) {
+      $set[`carStops.$.${k}`] = v
+    }
+  })
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(tripID), 'carStops.carStopID': carStopID },
+      { $set },
+    )
+}
+
+/**
  * Delete trip.
  * @param {Object} db
  * @param {string} tripID
@@ -982,6 +1004,7 @@ module.exports = {
   updateTrip,
   updateTripStatus,
   updateTripStudentStatus,
+  updateTripCarStop,
   deleteTrip,
   deleteTripsBySchool,
   updateTripsRemoveStudent,

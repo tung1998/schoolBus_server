@@ -1508,6 +1508,7 @@ function initOAuth2 (db, app) {
       '/Trip/:tripID([0-9a-fA-F]{24})/status',
       '/Trip/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/status',
       '/Trip/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/image',
+      '/Trip/:tripID([0-9a-fA-F]{24})/carStop/:carStopID([0-9a-fA-F]{24})',
     ],
     method: ['put'],
   })

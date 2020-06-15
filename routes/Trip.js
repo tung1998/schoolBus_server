@@ -525,4 +525,30 @@ router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/image'
     .catch(next)
 })
 
+router.put('/:tripID([0-9a-fA-F]{24})/carStop/:carStopID([0-9a-fA-F]{24})', (req, res, next) => {
+  let { tripID, carStopID } = req.params
+  let { status, note } = req.body
+  let { db } = req.app.locals
+  TripModel.updateTripCarStop(db, tripID, carStopID, { status, note })
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Update trip carStop : _id = ${tripID} carStopID = ${carStopID}`,
+          Date.now(),
+          1,
+          { ...req.body, carStopID },
+          'trip',
+          tripID,
+        )
+      }
+    })
+    .catch(next)
+})
+
 module.exports = router
