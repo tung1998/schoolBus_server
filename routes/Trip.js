@@ -13,14 +13,14 @@ router.post('/', (req, res, next) => {
   RouteModel.getRouteByID(db, routeID, 'studentList')
     .then((v) => {
       if (v === null) return res.status(400).send({ message: 'Route Not Exist' })
-      let { carID, driverID, nannyID, studentList, carStops: cs } = v
+      let { carID, driverID, nannyID, studentList } = v
       if (schoolID === undefined) schoolID = v.schoolID
       let students = studentList == null || !Array.isArray(studentList.studentIDs)
         ? []
         : studentList.studentIDs.map(c => ({ studentID: c, status: 0, image: null, note: null }))
-      let carStops = !Array.isArray(cs)
+      let carStops = studentList == null || !Array.isArray(studentList.carStopIDs)
         ? []
-        : cs.map(({ carStopID }) => ({ carStopID, status: null, note: null }))
+        : studentList.carStopIDs.map(carStopID => ({ carStopID, status: null, note: null }))
       return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, carStops)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
