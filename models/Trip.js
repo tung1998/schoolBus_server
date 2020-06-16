@@ -859,6 +859,22 @@ function updateTripStudentImage (db, tripID, studentID, image) {
 }
 
 /**
+ * Update trip student note.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {string} studentID
+ * @param {string} note
+ * @returns {Object}
+ */
+function updateTripStudentNote (db, tripID, studentID, note) {
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(tripID), 'students.studentID': studentID },
+      { $set: { updatedTime: Date.now(), 'students.$.note': note } },
+    )
+}
+
+/**
  * Get trip logs by school.
  * @param {Object} db
  * @param {string} schoolID
@@ -1012,6 +1028,7 @@ module.exports = {
   updateTripsRemoveStudent,
   updateTripsRemoveCarStop,
   updateTripStudentImage,
+  updateTripStudentNote,
   getTripLogsBySchool,
   getTripLogsByDriver,
   getTripLogsByNanny,
