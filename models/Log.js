@@ -67,10 +67,10 @@ function getLogs (db, page, extra = 'user') {
  * Get log by id.
  * @param {Object} db
  * @param {string} logID
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user']
  * @returns {Object}
  */
-function getLogByID (db, logID, extra = 'user,student') {
+function getLogByID (db, logID, extra = 'user') {
   return db.collection(process.env.LOG_COLLECTION)
     .findOne({ isDeleted: false, _id: ObjectID(logID) })
     .then((v) => {
@@ -107,13 +107,13 @@ function getLogsByIDs (db, logIDs, extra = 'user') {
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user']
  * @param {number} start
  * @param {number} finish
  * @param {number} type
  * @returns {Object}
  */
-function getLogsByObjectType (db, objectType, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+function getLogsByObjectType (db, objectType, sortBy, sortType, limit, page, extra = 'user', start, finish, type) {
   if (!limit) limit = Number(process.env.LIMIT_DOCUMENT_PER_PAGE)
   if (!page) page = 1
   let query = { isDeleted: false, objectType }
@@ -152,10 +152,10 @@ function getLogsByObjectType (db, objectType, sortBy, sortType, limit, page, ext
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user']
  * @returns {Object}
  */
-function getLogsByObject (db, objectType, objectId, sortBy, sortType, limit, page, extra = 'user,student') {
+function getLogsByObject (db, objectType, objectId, sortBy, sortType, limit, page, extra = 'user') {
   if (!limit) limit = Number(process.env.LIMIT_DOCUMENT_PER_PAGE)
   if (!page) page = 1
   let sort = {}
@@ -191,13 +191,13 @@ function getLogsByObject (db, objectType, objectId, sortBy, sortType, limit, pag
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} [extra='user']
  * @param {number} start
  * @param {number} finish
  * @param {number} type
  * @returns {Object}
  */
-function getLogsByObjects (db, objectType, objectIds, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+function getLogsByObjects (db, objectType, objectIds, sortBy, sortType, limit, page, extra = 'user', start, finish, type) {
   if (!limit) limit = Number(process.env.LIMIT_DOCUMENT_PER_PAGE)
   if (!page) page = 1
   let query = { isDeleted: false, objectType, objectId: { $in: objectIds } }
@@ -239,6 +239,7 @@ function addExtra (db, docs, extra) {
   if (Array.isArray(docs)) {
     let userIDs = []
     let studentIDs = []
+    let carStopIDs = []
     docs.forEach(({ userID, data }) => {
       if (e.includes('user') && userID != null) {
         userIDs.push(ObjectID(userID))
@@ -246,9 +247,13 @@ function addExtra (db, docs, extra) {
       if (e.includes('student') && data != null && data.studentID != null) {
         studentIDs.push(ObjectID(data.studentID))
       }
+      if (e.includes('carStop') && data != null && data.carStopID != null) {
+        carStopIDs.push(ObjectID(data.carStopID))
+      }
     })
     let users
     let students
+    let carStops
     let arr = []
     if (userIDs.length > 0) {
       let p = getUsersByIDs(db, userIDs)
@@ -264,6 +269,13 @@ function addExtra (db, docs, extra) {
         })
       arr.push(p)
     }
+    if (carStopIDs.length > 0) {
+      let p = getCarStopsByIDs(db, carStopIDs)
+        .then((v) => {
+          carStops = v
+        })
+      arr.push(p)
+    }
     return Promise.all(arr)
       .then(() => {
         docs.forEach((c) => {
@@ -273,6 +285,9 @@ function addExtra (db, docs, extra) {
           }
           if (students !== undefined && data != null && data.studentID != null) {
             c.data.student = students[data.studentID]
+          }
+          if (carStops !== undefined && data != null && data.carStopID != null) {
+            c.data.carStop = carStops[data.carStopID]
           }
         })
         return docs
@@ -292,6 +307,13 @@ function addExtra (db, docs, extra) {
     let p = getStudentByID(db, data.studentID)
       .then((v) => {
         doc.data.student = v
+      })
+    arr.push(p)
+  }
+  if (e.includes('carStop') && data != null && data.carStopID != null) {
+    let p = getCarStopByID(db, data.carStopID)
+      .then((v) => {
+        doc.data.carStop = v
       })
     arr.push(p)
   }
@@ -344,3 +366,4 @@ module.exports = {
 
 const { getUsersByIDs, getUserByID } = require('./User')
 const { getStudentsByIDs, getStudentByID } = require('./Student')
+const { getCarStopsByIDs, getCarStopByID } = require('./CarStop')

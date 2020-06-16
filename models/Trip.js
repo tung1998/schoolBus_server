@@ -866,13 +866,13 @@ function updateTripStudentImage (db, tripID, studentID, image) {
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} extra
  * @param {number} start
  * @param {number} finish
  * @param {number} type
  * @returns {Object}
  */
-function getTripLogsBySchool (db, schoolID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+function getTripLogsBySchool (db, schoolID, sortBy, sortType, limit, page, extra, start, finish, type) {
   return db.collection(process.env.TRIP_COLLECTION)
     .find({ isDeleted: false, schoolID })
     .toArray()
@@ -890,13 +890,13 @@ function getTripLogsBySchool (db, schoolID, sortBy, sortType, limit, page, extra
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} extra
  * @param {number} start
  * @param {number} finish
  * @param {number} type
  * @returns {Object}
  */
-function getTripLogsByDriver (db, driverID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+function getTripLogsByDriver (db, driverID, sortBy, sortType, limit, page, extra, start, finish, type) {
   return db.collection(process.env.TRIP_COLLECTION)
     .find({ isDeleted: false, driverID })
     .toArray()
@@ -914,13 +914,13 @@ function getTripLogsByDriver (db, driverID, sortBy, sortType, limit, page, extra
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} extra
  * @param {number} start
  * @param {number} finish
  * @param {number} type
  * @returns {Object}
  */
-function getTripLogsByNanny (db, nannyID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+function getTripLogsByNanny (db, nannyID, sortBy, sortType, limit, page, extra, start, finish, type) {
   return db.collection(process.env.TRIP_COLLECTION)
     .find({ isDeleted: false, nannyID })
     .toArray()
@@ -938,13 +938,13 @@ function getTripLogsByNanny (db, nannyID, sortBy, sortType, limit, page, extra =
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} extra
  * @param {number} start
  * @param {number} finish
  * @param {number} type
  * @returns {Object}
  */
-function getTripLogsByStudent (db, studentID, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+function getTripLogsByStudent (db, studentID, sortBy, sortType, limit, page, extra, start, finish, type) {
   return db.collection(process.env.TRIP_COLLECTION)
     .find({ isDeleted: false, 'students.studentID': studentID })
     .toArray()
@@ -962,13 +962,13 @@ function getTripLogsByStudent (db, studentID, sortBy, sortType, limit, page, ext
  * @param {string} sortType
  * @param {number} limit
  * @param {number} page
- * @param {string} [extra='user,student']
+ * @param {string} extra
  * @param {number} start
  * @param {number} finish
  * @param {number} type
  * @returns {Object}
  */
-function getTripLogsByStudents (db, studentIDs, sortBy, sortType, limit, page, extra = 'user,student', start, finish, type) {
+function getTripLogsByStudents (db, studentIDs, sortBy, sortType, limit, page, extra, start, finish, type) {
   return db.collection(process.env.TRIP_COLLECTION)
     .find({ isDeleted: false, 'students.studentID': { $in: studentIDs } })
     .toArray()

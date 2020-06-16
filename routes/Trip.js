@@ -430,7 +430,7 @@ router.delete('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.get('/Log', (req, res, next) => {
   let { db } = req.app.locals
-  let { sortBy, sortType, limit, page, extra } = req.query
+  let { sortBy, sortType, limit, page, extra = 'user,student,carStop' } = req.query
   limit = Number(limit)
   page = Number(page)
   if (req.schoolID !== undefined) {
@@ -466,7 +466,7 @@ router.get('/Log', (req, res, next) => {
 router.get('/:tripID([0-9a-fA-F]{24})/Log', (req, res, next) => {
   let { db } = req.app.locals
   let { tripID } = req.params
-  let { sortBy, sortType, limit, page, extra } = req.query
+  let { sortBy, sortType, limit, page, extra = 'user,student,carStop' } = req.query
   limit = Number(limit)
   page = Number(page)
   LogModel.getLogsByObject(db, 'trip', tripID, sortBy, sortType, limit, page, extra)
