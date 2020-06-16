@@ -6,7 +6,7 @@ const StudentListModel = require('./../models/StudentList')
 const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
-  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID } = req.body
+  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, type } = req.body
   if (req.schoolID !== undefined) schoolID = req.schoolID
   let { db } = req.app.locals
   StudentListModel.getStudentListByID(db, studentListID, null)
@@ -14,7 +14,7 @@ router.post('/', (req, res, next) => {
       let carStops = v !== null && Array.isArray(v.carStopIDs)
         ? v.carStopIDs.map(c => ({ carStopID: c, delayTime: null }))
         : []
-      return RouteModel.createRoute(db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, carStops)
+      return RouteModel.createRoute(db, startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, carStops, type)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
           return LogModel.createLog(
@@ -116,7 +116,7 @@ router.get('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   let { routeID } = req.params
-  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, carStops } = req.body
+  let { startCarStopID, endCarStopID, toll, carID, driverID, nannyID, studentListID, name, startTime, schoolID, carStops, type } = req.body
   let obj = {}
   if (startCarStopID !== undefined) obj.startCarStopID = startCarStopID
   if (endCarStopID !== undefined) obj.endCarStopID = endCarStopID
@@ -129,6 +129,7 @@ router.put('/:routeID([0-9a-fA-F]{24})', (req, res, next) => {
   if (startTime !== undefined) obj.startTime = startTime
   if (schoolID !== undefined) obj.schoolID = schoolID
   if (carStops !== undefined) obj.carStops = carStops
+  if (type !== undefined) obj.type = type
   let { db } = req.app.locals
   let p = Promise.resolve()
   if (studentListID !== undefined && carStops === undefined) {
