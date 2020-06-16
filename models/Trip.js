@@ -22,9 +22,10 @@ const TRIP_STATUS_CANCEL = 3 // hủy
  * @param {number} endTime
  * @param {string} schoolID
  * @param {Array} carStops
+ * @param {number} delayTime
  * @returns {Object}
  */
-function createTrip (db, carID, driverID, nannyID, routeID, students, attendance, type, status = TRIP_STATUS_WAITING, note, accident, startTime, endTime, schoolID, carStops) {
+function createTrip (db, carID, driverID, nannyID, routeID, students, attendance, type, status = TRIP_STATUS_WAITING, note, accident, startTime, endTime, schoolID, carStops, delayTime) {
   return db.collection(process.env.TRIP_COLLECTION)
     .insertOne({
       carID,
@@ -41,6 +42,7 @@ function createTrip (db, carID, driverID, nannyID, routeID, students, attendance
       endTime,
       schoolID,
       carStops,
+      delayTime,
       createdTime: Date.now(),
       updatedTime: Date.now(),
       isDeleted: false,

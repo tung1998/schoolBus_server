@@ -7,7 +7,7 @@ const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { routeID, attendance, type, status, note, accident, startTime, endTime, schoolID } = req.body
+  let { routeID, attendance, type, status, note, accident, startTime, endTime, schoolID, delayTime } = req.body
   if (req.schoolID !== undefined) schoolID = req.schoolID
   if (routeID === undefined) return res.status(400).send({ message: 'Missing routeID' })
   RouteModel.getRouteByID(db, routeID, 'studentList')
@@ -21,7 +21,7 @@ router.post('/', (req, res, next) => {
       let carStops = studentList == null || !Array.isArray(studentList.carStopIDs)
         ? []
         : studentList.carStopIDs.map(carStopID => ({ carStopID, status: 0, note: null }))
-      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, carStops)
+      return TripModel.createTrip(db, carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, carStops, delayTime)
         .then(({ insertedId }) => {
           res.send({ _id: insertedId })
           return LogModel.createLog(
@@ -337,7 +337,7 @@ router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
 
 router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
-  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, carStops } = req.body
+  let { carID, driverID, nannyID, routeID, students, attendance, type, status, note, accident, startTime, endTime, schoolID, carStops, delayTime } = req.body
   let obj = {}
   if (carID !== undefined) obj.carID = carID
   if (driverID !== undefined) obj.driverID = driverID
@@ -353,6 +353,7 @@ router.put('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   if (students !== undefined) obj.students = students
   if (schoolID !== undefined) obj.schoolID = schoolID
   if (carStops !== undefined) obj.carStops = carStops
+  if (delayTime !== undefined) obj.delayTime = delayTime
   let { db } = req.app.locals
   TripModel.updateTrip(db, tripID, obj)
     .then(({ matchedCount }) => {
