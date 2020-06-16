@@ -7,13 +7,13 @@ const LogModel = require('./../models/Log')
 
 router.post('/', (req, res, next) => {
   let { db } = req.app.locals
-  let { routeID, attendance, type, status, note, accident, startTime, endTime, schoolID, delayTime } = req.body
+  let { routeID, attendance, status, note, accident, startTime, endTime, schoolID, delayTime } = req.body
   if (req.schoolID !== undefined) schoolID = req.schoolID
   if (routeID === undefined) return res.status(400).send({ message: 'Missing routeID' })
   RouteModel.getRouteByID(db, routeID, 'studentList')
     .then((v) => {
       if (v === null) return res.status(400).send({ message: 'Route Not Exist' })
-      let { carID, driverID, nannyID, studentList } = v
+      let { carID, driverID, nannyID, studentList, type } = v
       if (schoolID === undefined) schoolID = v.schoolID
       let students = studentList == null || !Array.isArray(studentList.studentIDs)
         ? []
