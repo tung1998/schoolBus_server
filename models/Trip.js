@@ -994,6 +994,25 @@ function getTripLogsByStudents (db, studentIDs, sortBy, sortType, limit, page, e
     })
 }
 
+/**
+ * Get trip student logs.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {string} studentID
+ * @param {string} extra
+ * @returns {Object}
+ */
+function getTripStudentLogs (db, tripID, studentID, extra) {
+  return db.collection(process.env.LOG_COLLECTION)
+    .find({ isDeleted: false, objectType: 'trip', objectId: tripID, 'data.studentID': studentID })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return logAddExtra(db, v, extra)
+    })
+}
+
 module.exports = {
   createTrip,
   countTrips,
@@ -1034,6 +1053,7 @@ module.exports = {
   getTripLogsByNanny,
   getTripLogsByStudent,
   getTripLogsByStudents,
+  getTripStudentLogs,
 }
 
 const parseQuery = require('./parseQuery')
@@ -1044,5 +1064,5 @@ const { getRoutesByIDs, getRouteByID } = require('./Route')
 const { getStudentsByIDs } = require('./Student')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')
 const { deleteStudentTrips } = require('./StudentTrip')
-const { getLogsByObjects } = require('./Log')
+const { getLogsByObjects, addExtra: logAddExtra } = require('./Log')
 const { getCarStopsByIDs } = require('./CarStop')

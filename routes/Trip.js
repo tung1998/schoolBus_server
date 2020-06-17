@@ -552,6 +552,15 @@ router.put('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/note',
     .catch(next)
 })
 
+router.get('/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/log', (req, res, next) => {
+  let { tripID, studentID } = req.params
+  let { extra = 'user,student,carStop' } = req.query
+  let { db } = req.app.locals
+  TripModel.getTripStudentLogs(db, tripID, studentID, extra)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 router.put('/:tripID([0-9a-fA-F]{24})/carStop/:carStopID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID, carStopID } = req.params
   let { status, note } = req.body

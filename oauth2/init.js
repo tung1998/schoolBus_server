@@ -1472,7 +1472,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Trip/:tripID([0-9a-fA-F]{24})', '/Trip/:tripID([0-9a-fA-F]{24})/Log'],
+    routes: ['/Trip/:tripID([0-9a-fA-F]{24})', '/Trip/:tripID([0-9a-fA-F]{24})/Log', '/Trip/:tripID([0-9a-fA-F]{24})/student/:studentID([0-9a-fA-F]{24})/log'],
     method: ['get'],
   })
   soas2.layerAnd((req, next, cancel) => {
