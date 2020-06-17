@@ -999,6 +999,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Route/:routeID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
+  }).defend({
+    routes: ['/Route/:routeID([0-9a-fA-F]{24})/carStop/:carStopID([0-9a-fA-F]{24})'],
+    method: ['put'],
   })
 
   soas2.layerAnd((req, next, cancel) => {

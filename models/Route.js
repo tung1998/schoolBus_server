@@ -455,6 +455,28 @@ function updateRoutesRemoveCarStop (db, carStopID) {
     )
 }
 
+/**
+ * Update route carStop.
+ * @param {Object} db
+ * @param {string} routeID
+ * @param {string} carStopID
+ * @param {Object} obj
+ * @returns {Object}
+ */
+function updateRouteCarStop (db, routeID, carStopID, obj) {
+  let $set = { updatedTime: Date.now() }
+  Object.entries(obj).forEach(([k, v]) => {
+    if (v !== undefined) {
+      $set[`carStops.$.${k}`] = v
+    }
+  })
+  return db.collection(process.env.ROUTE_COLLECTION)
+    .updateOne(
+      { isDeleted: false, _id: ObjectID(routeID), 'carStops.carStopID': carStopID },
+      { $set },
+    )
+}
+
 module.exports = {
   createRoute,
   countRoutes,
@@ -468,6 +490,7 @@ module.exports = {
   deleteRoutesBySchool,
   updateRoutesCarStopsByStudentList,
   updateRoutesRemoveCarStop,
+  updateRouteCarStop,
 }
 
 const parseQuery = require('./parseQuery')
