@@ -323,6 +323,46 @@ router.get('/byStudent', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/current', (req, res, next) => {
+  let { db } = req.app.locals
+  let { beforeTime = '600000', afterTime = '3600000', extra } = req.query
+  beforeTime = Number(beforeTime)
+  afterTime = Number(afterTime)
+  if (req.driverID !== undefined) {
+    return TripModel.getCurrentTripByDriver(db, req.driverID, beforeTime, afterTime, extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
+  if (req.nannyID !== undefined) {
+    return TripModel.getCurrentTripByNanny(db, req.nannyID, beforeTime, afterTime, extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
+  if (req.studentID !== undefined) {
+    return TripModel.getCurrentTripByStudent(db, req.studentID, extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
+  if (req.studentIDs !== undefined) {
+    return TripModel.getCurrentTripByStudents(db, req.studentIDs, beforeTime, afterTime, extra)
+      .then((v) => {
+        if (v === undefined) res.status(404).send({ message: 'Not Found' })
+        else res.send(v)
+      })
+      .catch(next)
+  }
+  return res.status(404).send({ message: 'Not Found' })
+})
+
 router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
   let { db } = req.app.locals

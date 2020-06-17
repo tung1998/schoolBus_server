@@ -1547,7 +1547,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Trip/next', '/Trip/allNext'],
+    routes: ['/Trip/next', '/Trip/allNext', '/Trip/current'],
     method: ['get'],
   })
   soas2.layerAnd((req, next, cancel) => {
