@@ -367,7 +367,7 @@ function getTripsByTime (db, startTime, endTime, query, extra = 'car,driver,nann
  */
 function getNextTripByDriver (db, driverID, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, driverID, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, driverID, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .limit(1)
     .toArray()
@@ -387,7 +387,7 @@ function getNextTripByDriver (db, driverID, extra = 'car,driver,nanny,route,stud
  */
 function getNextTripByNanny (db, nannyID, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, nannyID, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, nannyID, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .limit(1)
     .toArray()
@@ -407,7 +407,7 @@ function getNextTripByNanny (db, nannyID, extra = 'car,driver,nanny,route,studen
  */
 function getNextTripByStudent (db, studentID, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, 'students.studentID': studentID, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, 'students.studentID': studentID, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .limit(1)
     .toArray()
@@ -427,7 +427,7 @@ function getNextTripByStudent (db, studentID, extra = 'car,driver,nanny,route,st
  */
 function getNextTripByStudents (db, studentIDs, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, 'students.studentID': { $in: studentIDs }, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, 'students.studentID': { $in: studentIDs }, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .limit(1)
     .toArray()
@@ -447,7 +447,7 @@ function getNextTripByStudents (db, studentIDs, extra = 'car,driver,nanny,route,
  */
 function getAllNextTripsByDriver (db, driverID, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, driverID, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, driverID, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .toArray()
     .then((v) => {
@@ -466,7 +466,7 @@ function getAllNextTripsByDriver (db, driverID, extra = 'car,driver,nanny,route,
  */
 function getAllNextTripsByNanny (db, nannyID, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, nannyID, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, nannyID, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .toArray()
     .then((v) => {
@@ -485,7 +485,7 @@ function getAllNextTripsByNanny (db, nannyID, extra = 'car,driver,nanny,route,st
  */
 function getAllNextTripsByStudent (db, studentID, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, 'students.studentID': studentID, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, 'students.studentID': studentID, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .toArray()
     .then((v) => {
@@ -504,7 +504,7 @@ function getAllNextTripsByStudent (db, studentID, extra = 'car,driver,nanny,rout
  */
 function getAllNextTripsByStudents (db, studentIDs, extra = 'car,driver,nanny,route,student,school,carStop') {
   return db.collection(process.env.TRIP_COLLECTION)
-    .find({ isDeleted: false, 'students.studentID': { $in: studentIDs }, startTime: { $gt: Date.now() } })
+    .find({ isDeleted: false, 'students.studentID': { $in: studentIDs }, startTime: { $gt: Date.now() }, status: { $ne: 2 } })
     .sort({ startTime: 1 })
     .toArray()
     .then((v) => {
