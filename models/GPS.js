@@ -261,13 +261,19 @@ function deleteGPSBySchool (db, schoolID) {
  * Get GPS by car.
  * @param {Object} db
  * @param {string} carID
+ * @param {number} start
+ * @param {number} finish
  * @param {number} page
  * @param {string} [extra='car,school']
  * @returns {Object}
  */
-function getGPSByCar (db, carID, page, extra = 'car,school') {
+function getGPSByCar (db, carID, start, finish, page, extra = 'car,school') {
+  let query = { isDeleted: false, carID }
+  if (start && finish) {
+    query.createdTime = { $gte: start, $lt: finish }
+  }
   return db.collection(process.env.GPS_COLLECTION)
-    .find({ isDeleted: false, carID })
+    .find(query)
     .skip(process.env.LIMIT_DOCUMENT_PER_PAGE * (page - 1))
     .limit(Number(process.env.LIMIT_DOCUMENT_PER_PAGE))
     .toArray()
@@ -305,6 +311,26 @@ function getGPSLast (db, extra = 'car,school') {
     })
 }
 
+/**
+ * Get GPS last by car.
+ * @param {Object} db
+ * @param {string} carID
+ * @param {string} [extra='car,school']
+ * @returns {Object}
+ */
+function getGPSLastByCar (db, carID, extra = 'car,school') {
+  return db.collection(process.env.GPS_COLLECTION)
+    .find({ isDeleted: false, carID })
+    .sort({ createdTime: -1 })
+    .limit(1)
+    .toArray()
+    .then(([v]) => {
+      if (v === undefined) return null
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
 module.exports = {
   createGPS,
   countGPS,
@@ -318,6 +344,7 @@ module.exports = {
   deleteGPSBySchool,
   getGPSByCar,
   getGPSLast,
+  getGPSLastByCar,
 }
 
 const parseQuery = require('./parseQuery')

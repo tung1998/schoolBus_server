@@ -185,9 +185,11 @@ router.get('/:GPSID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 
 router.get('/byCar', (req, res, next) => {
   let { db } = req.app.locals
-  let { carID, page, extra } = req.query
+  let { carID, start, finish, page, extra } = req.query
+  start = Number(start)
+  finish = Number(finish)
   page = Number(page) || 1
-  GPSModel.getGPSByCar(db, carID, page, extra)
+  GPSModel.getGPSByCar(db, carID, start, finish, page, extra)
     .then(v => res.send(v))
     .catch(next)
 })
@@ -197,6 +199,17 @@ router.get('/last', (req, res, next) => {
   let { extra } = req.query
   GPSModel.getGPSLast(db, extra)
     .then(v => res.send(v))
+    .catch(next)
+})
+
+router.get('/last/byCar', (req, res, next) => {
+  let { db } = req.app.locals
+  let { carID, extra } = req.query
+  GPSModel.getGPSLastByCar(db, carID, extra)
+    .then((v) => {
+      if (v === null) res.status(404).send({ message: 'Not Found' })
+      else res.send(v)
+    })
     .catch(next)
 })
 
