@@ -1563,7 +1563,23 @@ function initOAuth2 (db, app) {
     routes: ['/Trip/history'],
     method: ['get'],
   })
-  soas2.defend({
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_PARENT) {
+      return StudentModel.getStudentByID(req.app.locals.db, req.query.studentID, 'parent')
+        .then((v) => {
+          if (v !== null && Array.isArray(v.parents) && v.parents.some((c) => c.userID === req.token.userID)) return next()
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return StudentModel.getStudentByID(req.app.locals.db, req.query.studentID, 'class')
+        .then((v) => {
+          if (v !== null && v.class != null && v.class.teacher != null && v.class.teacher.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
     routes: ['/Trip/byStudent'],
     method: ['get'],
   })

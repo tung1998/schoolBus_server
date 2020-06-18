@@ -316,6 +316,8 @@ router.get('/allNext', (req, res, next) => {
 router.get('/byStudent', (req, res, next) => {
   let { db } = req.app.locals
   let { studentID, limit, page, extra, ...query } = req.query
+  limit = Number(limit)
+  page = Number(page)
   TripModel.getTripsByStudent(db, studentID, query, limit, page, extra)
     .then((v) => {
       res.send(v)
