@@ -1354,6 +1354,13 @@ function initOAuth2 (db, app) {
           return next()
         })
     }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return StudentModel.getStudentIDsByTeacherUserID(req.app.locals.db, req.token.userID)
+        .then((v) => {
+          req.studentIDs = v
+          return next()
+        })
+    }
     return cancel()
   }).defend({
     routes: ['/Trip/Log'],
@@ -1396,6 +1403,13 @@ function initOAuth2 (db, app) {
       return ParentModel.getParentByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           req.studentIDs = v.studentIDs
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return StudentModel.getStudentIDsByTeacherUserID(req.app.locals.db, req.token.userID)
+        .then((v) => {
+          req.studentIDs = v
           return next()
         })
     }
@@ -1464,6 +1478,24 @@ function initOAuth2 (db, app) {
             v !== null
             && Array.isArray(v.students)
             && v.students.some(e => e.student != null && Array.isArray(e.student.parents) && e.student.parents.some(el => el.userID === req.token.userID))
+          ) {
+            return next()
+          }
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return TripModel.getTripByID(req.app.locals.db, req.params.tripID, 'student')
+        .then((v) => {
+          if (
+            v !== null
+            && Array.isArray(v.students)
+            && v.students.some(e => (
+              e.student != null
+              && e.student.class != null
+              && e.student.class.teacher != null
+              && e.student.class.teacher.userID === req.token.userID
+            ))
           ) {
             return next()
           }
@@ -1542,6 +1574,13 @@ function initOAuth2 (db, app) {
       return ParentModel.getParentByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
           req.studentIDs = v.studentIDs
+          return next()
+        })
+    }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return StudentModel.getStudentIDsByTeacherUserID(req.app.locals.db, req.token.userID)
+        .then((v) => {
+          req.studentIDs = v
           return next()
         })
     }

@@ -660,6 +660,24 @@ function getStatisticInMonth (db, students, year, month) {
     })
 }
 
+/**
+ * Get studentIDs by teacher userID.
+ * @param {Object} db
+ * @param {string} teacherUserID
+ * @returns {Object}
+ */
+function getStudentIDsByTeacherUserID (db, teacherUserID) {
+  let query = { 'class/teacher/userID': teacherUserID }
+  return parseQuery(db, query)
+    .then(() => (
+      db.collection(process.env.STUDENT_COLLECTION)
+        .find({ isDeleted: false, ...query })
+        .project({ _id: 1 })
+        .toArray()
+        .then(v => v.map(({ _id }) => String(_id)))
+    ))
+}
+
 module.exports = {
   createStudent,
   countStudents,
@@ -683,6 +701,7 @@ module.exports = {
   getStudentsByClassStatusInDate,
   getTripsByStudentInDateLogs,
   getStatisticInMonthBySchool,
+  getStudentIDsByTeacherUserID,
 }
 
 const parseQuery = require('./parseQuery')
