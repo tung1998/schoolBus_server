@@ -365,6 +365,19 @@ router.get('/current', (req, res, next) => {
   return res.status(404).send({ message: 'Not Found' })
 })
 
+router.get('/current/byCar', (req, res, next) => {
+  let { db } = req.app.locals
+  let { carID, beforeTime = '600000', afterTime = '3600000', extra } = req.query
+  beforeTime = Number(beforeTime)
+  afterTime = Number(afterTime)
+  TripModel.getCurrentTripByCar(db, carID, beforeTime, afterTime, extra)
+    .then((v) => {
+      if (v === undefined) res.status(404).send({ message: 'Not Found' })
+      else res.send(v)
+    })
+    .catch(next)
+})
+
 router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
   let { db } = req.app.locals

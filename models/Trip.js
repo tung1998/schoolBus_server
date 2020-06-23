@@ -607,6 +607,29 @@ function getCurrentTripByStudents (db, studentIDs, beforeTime, afterTime, extra 
 }
 
 /**
+ * Get current trip by car.
+ * @param {Object} db
+ * @param {string} carID
+ * @param {number} beforeTime
+ * @param {number} afterTime
+ * @param {string} [extra='car,driver,nanny,route,student,school,carStop']
+ * @returns {Object}
+ */
+function getCurrentTripByCar (db, carID, beforeTime, afterTime, extra = 'car,driver,nanny,route,student,school,carStop') {
+  let n = Date.now()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, carID, startTime: { $gte: n - beforeTime, $lt: n + afterTime }, status: { $ne: 2 } })
+    .sort({ startTime: 1 })
+    .limit(1)
+    .toArray()
+    .then(([v]) => {
+      if (v === undefined) return undefined
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
  * Add extra.
  * @param {Object} db
  * @param {(Array|Object)} docs
@@ -1134,6 +1157,7 @@ module.exports = {
   getCurrentTripByNanny,
   getCurrentTripByStudent,
   getCurrentTripByStudents,
+  getCurrentTripByCar,
   updateTrip,
   updateTripStatus,
   updateTripStudentStatus,
