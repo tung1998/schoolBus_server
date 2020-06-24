@@ -584,7 +584,7 @@ function getCurrentTripByStudent (db, studentID, beforeTime, afterTime, extra = 
 }
 
 /**
- * Get next trip by students.
+ * Get current trip by students.
  * @param {Object} db
  * @param {Array} studentIDs
  * @param {number} beforeTime
@@ -601,6 +601,49 @@ function getCurrentTripByStudents (db, studentIDs, beforeTime, afterTime, extra 
     .toArray()
     .then(([v]) => {
       if (v === undefined) return undefined
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get all current trips.
+ * @param {Object} db
+ * @param {number} beforeTime
+ * @param {number} afterTime
+ * @param {string} [extra='car,driver,nanny,route,student,school,carStop']
+ * @returns {Object}
+ */
+function getAllCurrentTrips (db, beforeTime, afterTime, extra = 'car,driver,nanny,route,student,school,carStop') {
+  let n = Date.now()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, startTime: { $gte: n - beforeTime, $lt: n + afterTime }, status: { $ne: 2 } })
+    .sort({ startTime: 1 })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      if (!extra) return v
+      return addExtra(db, v, extra)
+    })
+}
+
+/**
+ * Get all current trips by school.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} beforeTime
+ * @param {number} afterTime
+ * @param {string} [extra='car,driver,nanny,route,student,school,carStop']
+ * @returns {Object}
+ */
+function getAllCurrentTripsBySchool (db, schoolID, beforeTime, afterTime, extra = 'car,driver,nanny,route,student,school,carStop') {
+  let n = Date.now()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({ isDeleted: false, schoolID, startTime: { $gte: n - beforeTime, $lt: n + afterTime }, status: { $ne: 2 } })
+    .sort({ startTime: 1 })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
       if (!extra) return v
       return addExtra(db, v, extra)
     })
@@ -1157,6 +1200,8 @@ module.exports = {
   getCurrentTripByNanny,
   getCurrentTripByStudent,
   getCurrentTripByStudents,
+  getAllCurrentTrips,
+  getAllCurrentTripsBySchool,
   getCurrentTripByCar,
   updateTrip,
   updateTripStatus,

@@ -378,6 +378,25 @@ router.get('/current/byCar', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/allCurrent', (req, res, next) => {
+  let { db } = req.app.locals
+  let { beforeTime = '600000', afterTime = '3600000', extra } = req.query
+  beforeTime = Number(beforeTime)
+  afterTime = Number(afterTime)
+  if (req.schoolID !== undefined) {
+    return TripModel.getAllCurrentTripsBySchool(db, req.schoolID, beforeTime, afterTime, extra)
+      .then((v) => {
+        res.send(v)
+      })
+      .catch(next)
+  }
+  TripModel.getAllCurrentTrips(db, beforeTime, afterTime, extra)
+    .then((v) => {
+      res.send(v)
+    })
+    .catch(next)
+})
+
 router.get('/:tripID([0-9a-fA-F]{24})', (req, res, next) => {
   let { tripID } = req.params
   let { db } = req.app.locals

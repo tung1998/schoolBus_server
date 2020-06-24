@@ -1434,6 +1434,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Trip'],
     method: ['post'],
+  }).defend({
+    routes: ['/Trip/allCurrent'],
+    method: ['get'],
   })
   soas2.layerAnd((req, next, cancel) => {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
