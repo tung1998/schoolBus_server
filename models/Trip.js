@@ -1171,6 +1171,28 @@ function getTripStudentLogs (db, tripID, studentID, extra) {
     })
 }
 
+/**
+ * Update trips parent request by time.
+ * @param {Object} db
+ * @param {string} tripID
+ * @param {number} time
+ * @param {string} studentID
+ * @returns {Object}
+ */
+function updateTripsParentRequestByTime (db, tripID, time, studentID) {
+  let query = { isDeleted: false, students: { $elemMatch: { studentID } } }
+  if (tripID !== undefined) {
+    query._id = ObjectID(tripID)
+  } else {
+    query.startTime = { $gte: new Date(time).setHours(0, 0, 0, 0), $lt: new Date(time).setHours(24, 0, 0, 0) }
+  }
+  return db.collection(process.env.TRIP_COLLECTION)
+    .updateMany(
+      query,
+      { $set: { updatedTime: Date.now(), 'students.$.status': 3 } },
+    )
+}
+
 module.exports = {
   createTrip,
   countTrips,
@@ -1219,6 +1241,7 @@ module.exports = {
   getTripLogsByStudent,
   getTripLogsByStudents,
   getTripStudentLogs,
+  updateTripsParentRequestByTime,
 }
 
 const parseQuery = require('./parseQuery')

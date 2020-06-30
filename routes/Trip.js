@@ -661,4 +661,15 @@ router.put('/:tripID([0-9a-fA-F]{24})/carStop/:carStopID([0-9a-fA-F]{24})', (req
     .catch(next)
 })
 
+router.put('/parentRequestByTime', (req, res, next) => {
+  let { db } = req.app.locals
+  let { tripID, time, studentID } = req.body
+  TripModel.updateTripsParentRequestByTime(db, tripID, time, studentID)
+    .then(({ matchedCount }) => {
+      if (matchedCount === 0) res.status(400).send({ message: 'Not Exist' })
+      else res.send()
+    })
+    .catch(next)
+})
+
 module.exports = router

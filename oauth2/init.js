@@ -20,6 +20,8 @@ const TeacherModel = require('./../models/Teacher')
 const TripModel = require('./../models/Trip')
 const UserModel = require('./../models/User')
 
+const bodyParser = require('body-parser')
+
 const CANCEL_MESSAGE = 'Authentication is fail!'
 
 const USER_TYPE_ADMINISTRATOR = 0
@@ -81,6 +83,7 @@ function tokenExtend (req) {
  * @returns {undefined}
  */
 function initOAuth2 (db, app) {
+  app.use(bodyParser.json({ limit: '50mb' }))
   soas2.init({
     expressApp: app,
     authentication: authentication,
@@ -1644,6 +1647,26 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/Trip/:tripID([0-9a-fA-F]{24})'],
     method: ['delete'],
+  })
+  soas2.layerAnd((req, next, cancel) => {
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return StudentModel.getStudentByID(req.app.locals.db, req.body.studentID, 'class')
+        .then((v) => {
+          if (
+            v !== null
+            && v.class != null
+            && v.class.teacher != null
+            && v.class.teacher.userID === req.token.userID
+          ) {
+            return next()
+          }
+          return cancel()
+        })
+    }
+    return cancel()
+  }).defend({
+    routes: ['/Trip/parentRequestByTime'],
+    method: ['put'],
   })
 
   soas2.layerAnd((req, next, cancel) => {
