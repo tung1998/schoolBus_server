@@ -672,4 +672,16 @@ router.put('/parentRequestByTime', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/problemInDay', (req, res, next) => {
+  let { db } = req.app.locals
+  let schoolID = req.schoolID
+  let { year, month, date } = req.query
+  year = Number(year)
+  month = Number(month) - 1
+  date = Number(date)
+  TripModel.getTripProblemInDay(db, schoolID, year, month, date)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router
