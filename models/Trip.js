@@ -1204,7 +1204,57 @@ function updateTripsParentRequestByTime (db, tripID, time, studentID) {
  */
 function getTripProblemInDay (db, schoolID, year, month, date) {
   let start = new Date(year, month, date).getTime()
-  let end = new Date(year, month, date, 24).getTime()
+  let end = new Date(year, month, date + 1).getTime()
+  return db.collection(process.env.TRIP_COLLECTION)
+    .find({
+      isDeleted: false,
+      startTime: { $gte: start, $lt: end },
+      $or: [
+        { status: 3 },
+        { students: { $elemMatch: { status: 4 } } },
+      ],
+      ...(schoolID === undefined ? {} : { schoolID }),
+    })
+    .toArray()
+    .then((v) => {
+      if (v.length === 0) return []
+      return addExtra(db, v, 'car,driver,nanny,route,student,school,carStop')
+    })
+    .then((v) => {
+      return v.reduce((acc, cur) => {
+        if (cur.status === 3) {
+          acc.push({
+            tripID: cur._id,
+            trip: cur,
+          })
+        } else {
+          cur.students.forEach((e) => {
+            if (e.status === 4) {
+              acc.push({
+                tripID: cur._id,
+                trip: cur,
+                studentID: e.studentID,
+                student: e.student,
+              })
+            }
+          })
+        }
+        return acc
+      }, [])
+    })
+}
+
+/**
+ * Gettrip problem in month.
+ * @param {Object} db
+ * @param {string} schoolID
+ * @param {number} year
+ * @param {number} month
+ * @returns {Object}
+ */
+function getTripProblemInMonth (db, schoolID, year, month) {
+  let start = new Date(year, month).getTime()
+  let end = new Date(year, month + 1).getTime()
   return db.collection(process.env.TRIP_COLLECTION)
     .find({
       isDeleted: false,
@@ -1294,6 +1344,7 @@ module.exports = {
   getTripStudentLogs,
   updateTripsParentRequestByTime,
   getTripProblemInDay,
+  getTripProblemInMonth,
 }
 
 const parseQuery = require('./parseQuery')

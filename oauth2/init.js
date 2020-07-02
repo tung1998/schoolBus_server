@@ -1683,7 +1683,7 @@ function initOAuth2 (db, app) {
     }
     return cancel()
   }).defend({
-    routes: ['/Trip/problemInDay'],
+    routes: ['/Trip/problemInDay', '/Trip/problemInMonth'],
     method: ['get'],
   })
 

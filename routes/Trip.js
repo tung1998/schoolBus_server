@@ -684,4 +684,15 @@ router.get('/problemInDay', (req, res, next) => {
     .catch(next)
 })
 
+router.get('/problemInMonth', (req, res, next) => {
+  let { db } = req.app.locals
+  let schoolID = req.schoolID
+  let { year, month } = req.query
+  year = Number(year)
+  month = Number(month) - 1
+  TripModel.getTripProblemInMonth(db, schoolID, year, month)
+    .then(v => res.send(v))
+    .catch(next)
+})
+
 module.exports = router
