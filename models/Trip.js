@@ -1210,8 +1210,8 @@ function getTripProblemInDay (db, schoolID, year, month, date) {
       isDeleted: false,
       startTime: { $gte: start, $lt: end },
       $or: [
-        { status: 4 },
-        { students: { $elemMatch: { status: 3 } } },
+        { status: 3 },
+        { students: { $elemMatch: { status: 4 } } },
       ],
       ...(schoolID === undefined ? {} : { schoolID }),
     })
@@ -1222,14 +1222,14 @@ function getTripProblemInDay (db, schoolID, year, month, date) {
     })
     .then((v) => {
       return v.reduce((acc, cur) => {
-        if (cur.status === 4) {
+        if (cur.status === 3) {
           acc.push({
             tripID: cur._id,
             trip: cur,
           })
         } else {
           cur.students.forEach((e) => {
-            if (e.status === 3) {
+            if (e.status === 4) {
               acc.push({
                 tripID: cur._id,
                 trip: cur,
