@@ -608,7 +608,7 @@ function getTripsByStudentInDateLogs (db, studentID, date, extra = 'user,student
  */
 function getStatisticInMonthBySchool (db, schoolID, year, month, extra = 'user,class,carStop,school,parent') {
   return db.collection(process.env.STUDENT_COLLECTION)
-    .find({ isDeleted: false, schoolID })
+    .find({ isDeleted: false, ...(schoolID === undefined ? {} : { schoolID }) })
     .toArray()
     .then((v) => {
       if (v.length === 0) return []

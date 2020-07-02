@@ -1166,6 +1166,7 @@ function initOAuth2 (db, app) {
     if (req.token.type === USER_TYPE_ADMINISTRATOR) {
       return AdministratorModel.getAdministratorByUser(req.app.locals.db, req.token.userID, null)
         .then((v) => {
+          if (v.adminType === ADMINISTRATOR_TYPE_ROOT) return next()
           if (v.adminType === ADMINISTRATOR_TYPE_SCHOOL) {
             req.schoolID = v.schoolID
             return next()

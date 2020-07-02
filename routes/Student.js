@@ -226,15 +226,13 @@ router.get('/:studentID([0-9a-fA-F]{24})/tripInDateLog', (req, res, next) => {
 
 router.get('/statisticInMonth', (req, res, next) => {
   let { db } = req.app.locals
+  let schoolID = req.schoolID
   let { year, month, extra } = req.query
   year = Number(year)
   month = Number(month) - 1
-  if (req.schoolID !== undefined) {
-    return StudentModel.getStatisticInMonthBySchool(db, req.schoolID, year, month, extra)
-      .then(v => res.send(v))
-      .catch(next)
-  }
-  res.status(404).send({ message: 'Not Found' })
+  StudentModel.getStatisticInMonthBySchool(db, schoolID, year, month, extra)
+    .then(v => res.send(v))
+    .catch(next)
 })
 
 module.exports = router
