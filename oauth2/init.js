@@ -940,7 +940,14 @@ function initOAuth2 (db, app) {
     if (req.token.type === USER_TYPE_PARENT) {
       return ParentRequestModel.getParentRequestByID(req.app.locals.db, req.params.parentRequestID, 'parent')
         .then((c) => {
-          if (c !== null && c.parent !== null && c.parent.userID === req.token.userID) return next()
+          if (c !== null && c.parent != null && c.parent.userID === req.token.userID) return next()
+          return cancel()
+        })
+    }
+    if (req.token.type === USER_TYPE_TEACHER) {
+      return ParentRequestModel.getParentRequestByID(req.app.locals.db, req.params.parentRequestID, 'student')
+        .then((c) => {
+          if (c !== null && c.student != null && c.student.class != null && c.student.class.teacher != null && c.student.class.teacher.userID === req.token.userID) return next()
           return cancel()
         })
     }
@@ -948,6 +955,9 @@ function initOAuth2 (db, app) {
   }).defend({
     routes: ['/ParentRequest/:parentRequestID([0-9a-fA-F]{24})'],
     method: ['get', 'put', 'delete'],
+  }).defend({
+    routes: ['/ParentRequest/:parentRequestID([0-9a-fA-F]{24})/confirm'],
+    method: ['put'],
   })
 
   soas2.layerAnd((req, next, cancel) => {

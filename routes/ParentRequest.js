@@ -253,4 +253,29 @@ router.get('/:parentRequestID([0-9a-fA-F]{24})/Log', (req, res, next) => {
     .catch(next)
 })
 
+router.put('/:parentRequestID([0-9a-fA-F]{24})/confirm', (req, res, next) => {
+  let { parentRequestID } = req.params
+  let { db } = req.app.locals
+  ParentRequestModel.confirmParentRequest(db, parentRequestID)
+    .then(({ lastErrorObject: { updatedExisting }, value }) => {
+      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
+      else {
+        res.send()
+        return LogModel.createLog(
+          db,
+          req.token ? req.token.userID : null,
+          req.headers['user-agent'],
+          req.ip,
+          `Confirm parentRequest : _id = ${parentRequestID}`,
+          Date.now(),
+          1,
+          req.body,
+          'parentRequest',
+          parentRequestID,
+        )
+      }
+    })
+    .catch(next)
+})
+
 module.exports = router
