@@ -1259,39 +1259,42 @@ function getTripProblemInMonth (db, schoolID, year, month) {
     .find({
       isDeleted: false,
       startTime: { $gte: start, $lt: end },
-      $or: [
-        { status: 3 },
-        { students: { $elemMatch: { status: 4 } } },
-      ],
       ...(schoolID === undefined ? {} : { schoolID }),
     })
+    .project({ _id: 1 })
     .toArray()
-    .then((v) => {
-      if (v.length === 0) return []
-      return addExtra(db, v, 'car,driver,nanny,route,student,school,carStop')
-    })
-    .then((v) => {
-      return v.reduce((acc, cur) => {
-        if (cur.status === 3) {
-          acc.push({
-            tripID: cur._id,
-            trip: cur,
-          })
-        } else {
-          cur.students.forEach((e) => {
-            if (e.status === 4) {
-              acc.push({
-                tripID: cur._id,
-                trip: cur,
-                studentID: e.studentID,
-                student: e.student,
-              })
-            }
-          })
-        }
-        return acc
-      }, [])
-    })
+    .then((v) => (
+      db.collection(process.env.LOG_COLLECTION)
+        .find({
+          isDeleted: false,
+          objectType: 'trip',
+          objectId: { $in: v.map(({ _id }) => String(_id)) },
+          type: 1,
+          $or: [
+            { action: /^Update trip( status)? :/, 'data.status': 3 },
+            { action: /^Update trip student status :/, 'data.status': 4, 'data.studentID': { $ne: null } },
+          ],
+        })
+        .project({ _id: 0, objectId: 1, action: 1, 'data.studentID': 1 })
+        .toArray()
+    ))
+    .then((v) => (
+      getTripsByIDs(db, v.map(({ objectId }) => ObjectID(objectId)), 'car,driver,nanny,route,student,school,carStop')
+        .then(trips => (
+          v.map(({ objectId, action, data }) => ({
+            tripID: objectId,
+            trip: trips[objectId],
+            ...(
+              action.match(/^Update trip student status :/)
+                ? {
+                  studentID: data.studentID,
+                  student: (trips[objectId].students.find(({ studentID }) => studentID === data.studentID) || {}).student,
+                }
+                : {}
+            ),
+          }))
+        ))
+    ))
 }
 
 module.exports = {
