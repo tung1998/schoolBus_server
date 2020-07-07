@@ -426,19 +426,11 @@ function deleteParentRequestsBySchool (db, schoolID) {
  * @returns {Object}
  */
 function confirmParentRequest (db, parentRequestID) {
-  let p = db.collection(process.env.PARENT_REQUEST_COLLECTION)
-    .findAndModify(
+  return db.collection(process.env.PARENT_REQUEST_COLLECTION)
+    .updateOne(
       { isDeleted: false, _id: ObjectID(parentRequestID) },
-      null,
       { $set: { updatedTime: Date.now(), status: 2 } },
-      { fields: { _id: 0, tripID: 1, time: 1, studentID: 1 } },
     )
-  p.then(({ lastErrorObject: { updatedExisting }, value }) => {
-    if (updatedExisting) {
-      updateTripsParentRequestByTime (db, value.tripID, value.time, value.studentID)
-    }
-  })
-  return p
 }
 
 module.exports = {
@@ -461,7 +453,7 @@ module.exports = {
 
 const parseQuery = require('./parseQuery')
 const { getStudentsByIDs, getStudentByID } = require('./Student')
-const { getTripsByIDs, getTripByID, updateTripsParentRequestByTime } = require('./Trip')
+const { getTripsByIDs, getTripByID } = require('./Trip')
 const { getParentsByIDs, getParentByID } = require('./Parent')
 const { getTeachersByIDs, getTeacherByID } = require('./Teacher')
 const { getSchoolsByIDs, getSchoolByID } = require('./School')

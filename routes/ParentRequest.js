@@ -4,6 +4,7 @@ const router = express.Router()
 const ParentRequestModel = require('./../models/ParentRequest')
 const StudentModel = require('./../models/Student')
 const LogModel = require('./../models/Log')
+const TripModel = require('./../models/Trip')
 
 router.post('/', (req, res, next) => {
   let { studentID, tripID, time, type, status, parentID, teacherID, note, schoolID } = req.body
@@ -256,24 +257,33 @@ router.get('/:parentRequestID([0-9a-fA-F]{24})/Log', (req, res, next) => {
 router.put('/:parentRequestID([0-9a-fA-F]{24})/confirm', (req, res, next) => {
   let { parentRequestID } = req.params
   let { db } = req.app.locals
-  ParentRequestModel.confirmParentRequest(db, parentRequestID)
-    .then(({ lastErrorObject: { updatedExisting }, value }) => {
-      if (!updatedExisting) res.status(404).send({ message: 'Not Found' })
-      else {
-        res.send()
-        return LogModel.createLog(
-          db,
-          req.token ? req.token.userID : null,
-          req.headers['user-agent'],
-          req.ip,
-          `Confirm parentRequest : _id = ${parentRequestID}`,
-          Date.now(),
-          1,
-          req.body,
-          'parentRequest',
-          parentRequestID,
-        )
-      }
+  ParentRequestModel.getParentRequestByID(db, parentRequestID, null)
+    .then((v) => {
+      if (v === null) return res.status(404).send({ message: 'Not Found' })
+
+      return TripModel.updateTripsParentRequestByTime(db, v.tripID, v.time, v.studentID)
+        .then(({ matchedCount }) => {
+          if (matchedCount === 0) return res.status(404).send({ message: 'Not Found' })
+
+          return ParentRequestModel.confirmParentRequest(db, parentRequestID)
+            .then(({ matchedCount: matchedCount1 }) => {
+              if (matchedCount1 === 0) return res.status(404).send({ message: 'Not Found' })
+
+              res.send()
+              return LogModel.createLog(
+                db,
+                req.token ? req.token.userID : null,
+                req.headers['user-agent'],
+                req.ip,
+                `Confirm parentRequest : _id = ${parentRequestID}`,
+                Date.now(),
+                1,
+                req.body,
+                'parentRequest',
+                parentRequestID,
+              )
+            })
+        })
     })
     .catch(next)
 })
