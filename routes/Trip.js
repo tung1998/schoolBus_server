@@ -327,7 +327,7 @@ router.get('/byStudent', (req, res, next) => {
 
 router.get('/current', (req, res, next) => {
   let { db } = req.app.locals
-  let { beforeTime = '600000', afterTime = '3600000', extra } = req.query
+  let { beforeTime = '600000000', afterTime = '3600000000', extra } = req.query
   beforeTime = Number(beforeTime)
   afterTime = Number(afterTime)
   if (req.driverID !== undefined) {
